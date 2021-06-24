@@ -7,6 +7,7 @@
 using namespace std;
 using uint = unsigned int;
 using ull = unsigned long long;
+const int MAX = 256;
 
 void hash_combine(ull & seed, ull const& v) {
   seed ^= hash<ull>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
@@ -26,6 +27,7 @@ struct RLSLP{
     unordered_map<ull,ull> RL_par, not_RL_par; //親へのハッシュ
     vector<ull> is_RL; //ある変数の子が連長圧縮かどうか
     vector<ull> str, pre_str;
+    vector<ull> length;
 
     RLSLP(const string S) {
         var = 256;
@@ -38,9 +40,9 @@ struct RLSLP{
     }
 
     void print_rules() {
-        cout << "規則集合" << endl;
+        cout << "規則集合 X -> A B の形式" << endl;
         for(int i = 0; i < var-256; i++) {
-            cout << i+256 << " -> " << Left_ch[i] << " " << Right_ch[i] << endl;
+            cout << i+256 << " -> " << Left_ch[i] << " " << Right_ch[i] << " 長さは" << length[i]<< endl;
         }
     }
 
@@ -120,6 +122,7 @@ struct RLSLP{
                 } else {
                     not_RL_par[hash_pair(a,b)] = var;
                     str.emplace_back(var);
+                    is_RL.emplace_back(0);
                     Left_ch.emplace_back(a), Right_ch.emplace_back(b);
                     var++;
                 }
@@ -145,4 +148,22 @@ struct RLSLP{
         }
         return str.front();
     }
+
+    void cal_len() {
+        length = vector<ull>(var);
+        for(int i = 0; i < var-256; i++) {
+            ull a = Left_ch[i], b = Right_ch[i];
+            if(is_RL[i]) {
+                if(b < MAX) length[i] += a; else length[i] += a*length[b-MAX];
+            } else {
+                if(a < MAX) length[i] += 1; else length[i] += length[a-MAX];
+                if(b < MAX) length[i] += 1; else length[i] += length[b-MAX];
+            }
+        }
+    }
+
+    // //srt[i]を取得
+    // ull get(int i) {
+
+    // }
 };
