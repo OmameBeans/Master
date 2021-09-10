@@ -17,9 +17,12 @@ using uint = unsigned int;
 using ull = unsigned long long;
 
 int lce(int i, int j, string S) {
-    int cnt = 0;
-    while(i+cnt < S.size() && j+cnt < S.size() && S[i+cnt] == S[j+cnt]) cnt++;
-    return cnt;
+    int ans = 0;
+    for(int cnt = 0; j+cnt < S.size(); cnt++) {
+        if(S[i+cnt] != S[j+cnt]) break;
+        ans++;
+    }
+    return ans;
 }
 
 
@@ -60,7 +63,7 @@ int main(int argc, char *argv[]) {
 
         cout << "文字列の長さ : " << N << endl << "クエリ数 : " << Q << endl; 
 
-        vector<int> a(Q), b(Q);
+        vector<int> a(Q), b(Q), l(Q), r(Q);
 
         auto t1 = std::chrono::high_resolution_clock::now(); // 現在時刻を取得
 
@@ -68,9 +71,10 @@ int main(int argc, char *argv[]) {
         RL.StoRLSLP();
         RL.cal_len();
 
-        for(int _ = 0; _ < Q; _++) {
+        for(int q = 0; q < Q; q++) {
             int i,j; cin >> i >> j;
-            a[_] = RL.LCE(i,j);
+            l[q] = i, r[q] = j;
+            a[q] = RL.LCE(i,j);
         }
 
         auto t2 = std::chrono::high_resolution_clock::now(); // 現在時刻を取得
@@ -79,9 +83,9 @@ int main(int argc, char *argv[]) {
 
         t1 = std::chrono::high_resolution_clock::now(); // 現在時刻を取得
 
-        for(int _ = 0; _ < Q; _++) {
-            int i,j; cin >> i >> j;
-            b[_] = lce(i,j,S);
+
+        for(int q = 0; q < Q; q++) {
+            b[q] = lce(l[q],r[q],S);
         }
 
         t2 = std::chrono::high_resolution_clock::now(); // 現在時刻を取得
@@ -89,7 +93,10 @@ int main(int argc, char *argv[]) {
         std::cout << "愚直にLCE : " << millisec << " ms" << std::endl;
 
         for(int i = 0; i < Q; i++) {
-            if(a[i] != b[i]) cout << "Diff" << endl;
+            if(a[i] != b[i]) {
+                cout << "Diff" << endl;
+                cout << l[i] << " " << r[i] << " " << a[i] << " " << b[i] << endl;
+            }
         }
 
 
