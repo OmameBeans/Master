@@ -3,6 +3,8 @@
 #include<unordered_map>
 #include<vector>
 #include<set>
+#include<stack>
+#include<tuple>
 
 using namespace std;
 using uint = unsigned int;
@@ -98,51 +100,6 @@ struct RLSLP{
         }
     }
 
-    //strをPairCompする O(|str|^2)
-    // void PairComp() {
-    //     vector<ull> L,R;
-    //     unordered_map<ull,char> who;
-    //     unordered_map<ull,ull> seen;
-    //     unordered_map<pair<ull,ull>,ull,HashPair> freq;
-    //     int N = pre_str.size();
-    //     //bigramの頻度を計算
-    //     for(int i = 0; i < N-1; i++) {
-    //         freq[{pre_str[i],pre_str[i+1]}]++;
-    //     }
-    //     //各文字に'L'か'R'を割り当てる
-    //     for(int i = 0; i < N; i++) {
-    //         if(seen[pre_str[i]]) continue;
-    //         ull a = pre_str[i];
-    //         ull cnt_L = 0, cnt_R = 0;
-    //         for(auto l : L) cnt_L += freq[{l,a}] + freq[{a,l}];
-    //         for(auto r : R) cnt_R += freq[{r,a}] + freq[{a,r}];
-    //         if(cnt_L <= cnt_R) L.emplace_back(a), who[a] = 'L';
-    //         else R.emplace_back(a), who[a] = 'R';
-    //         seen[pre_str[i]] = 1;
-    //     }
-    //     //L,Rのペアがあればまとめる
-    //     for(int i = 0; i < N;) {
-    //         if(i < N-1 && who[pre_str[i]] == 'L' && who[pre_str[i+1]] == 'R') {
-    //             ull a = pre_str[i];
-    //             ull b = pre_str[i+1];
-    //             ull par;
-    //             if(get_not_RL_par(a,b,par)) {
-    //                 str.emplace_back(par);
-    //             } else {
-    //                 not_RL_par[{a,b}] = var;
-    //                 str.emplace_back(var);
-    //                 is_RL.emplace_back(0);
-    //                 Left_ch.emplace_back(a), Right_ch.emplace_back(b);
-    //                 var++;
-    //             }
-    //             i += 2;
-    //         } else {
-    //             str.emplace_back(pre_str[i]);
-    //             i++;
-    //         }
-    //     }
-    // }
-
     //strをPairCompする O(|w|log|w|)
     void PairComp() {
         vector<pair<ull,ull>> edge;
@@ -228,14 +185,14 @@ struct RLSLP{
             pre_str = str;
             str = vector<ull>();
             PairComp();
-            //cout << "PairComp : ";
+            // cout << "PairComp : ";
             // if(pre_str != str) print_str();
             // else break;
         }
         return str.front();
     }
 
-    ull get(int i) {
+    ull get_char(int i) {
         ull x = var-1;
         ull l = 0, r = N;
         while(r-l > 1) {
@@ -255,10 +212,110 @@ struct RLSLP{
         return x;
     }
 
-    // ull LCE(int i, int j) {
-    //     ull x = var-1;
+    //左端のindexがiになっている変数or文字を返す
+    void getPath(tuple<ull,int,int> start, int i, stack<tuple<ull,int,int>> &path) {
+        ull x = get<0>(start); //root
+        ull l = get<1>(start), r = get<2>(start);
+        while(1) {
+            path.push({x,l,r});
+            if(l == i) break;
+            // cout << l << " " << r << endl;
+            if(is_RL[x-256]) {
+                ull len = (Right_ch[x-256] < 256 ? 1 : length[Right_ch[x-256]-256]);
+                ull k = (i-l)/len;
+                ull prel = l;
+                l = prel+k*len, r = prel+(k+1)*len;
+                x = Right_ch[x-256];
+            } else {
+                ull left_len = (Left_ch[x-256] < 256 ? 1 : length[Left_ch[x-256]-256]);
+                if(i < l + left_len) r = l+left_len, x = Left_ch[x-256];
+                else l = l+left_len, x = Right_ch[x-256];
+            }
+        }
+        return;
+    }
 
-    // }
+    void downPath(stack<tuple<ull,int,int>> &path) {
+        auto n = path.top();
+        ull x = get<0>(n);
+        int l = get<1>(n), r = get<2>(n);
+        if(is_RL[x-256]) {
+                ull len = (Right_ch[x-256] < 256 ? 1 : length[Right_ch[x-256]-256]);
+                ull prel = l;
+                l = prel, r = prel+len;
+                x = Right_ch[x-256];
+            } else {
+                ull left_len = (Left_ch[x-256] < 256 ? 1 : length[Left_ch[x-256]-256]);
+                r = l+left_len, x = Left_ch[x-256];
+        }
+        path.push({x,l,r});
+    }
+
+    //l <= pos < rとなる変数を探す．
+    void upPath(int pos, stack<tuple<ull,int,int>> &path) {
+        int l,r;
+        while(1) {
+            auto n = path.top();
+            l = get<1>(n), r = get<2>(n);
+            if(l <= pos && pos < r) break;
+            else path.pop();
+        }
+    }
+
+    ull LCE(int i, int j) {
+        stack<tuple<ull,int,int>> p1,p2;
+
+        getPath({var-1,0,N},i,p1);
+        getPath({var-1,0,N},j,p2);
+
+        ull l = 0;
+
+        // while(p1.size()) {
+        //     cout << p1.top() << " ";
+        //     p1.pop();
+        // }
+        // cout << endl;
+
+        // while(p2.size()) {
+        //     cout << p2.top() << " ";
+        //     p2.pop();
+        // }
+        // cout << endl;
+
+        while(1) {
+            auto n1 = p1.top();
+            auto n2 = p2.top();
+            auto v1 = get<0>(n1),v2 = get<0>(n2);
+            // cout << v1 << " " << v2 << endl;
+            // cout << l << endl;
+            if(v1 == v2) {
+                if(v1 < 256) l += 1;
+                else l += length[v1-256];
+
+                if(i+l >= N || j+l >= N) break;
+
+                upPath(i+l,p1);
+                upPath(j+l,p2);
+
+                getPath(p1.top(),i+l,p1);
+                getPath(p2.top(),j+l,p2);
+            } else {
+                auto sz1 = (v1 < 256 ? 1 : length[v1-256]);
+                auto sz2 = (v2 < 256 ? 1 : length[v2-256]);
+                if(sz1 == 1 && sz2 == 1) break;
+                if(sz1 > sz2) {
+                    downPath(p1);
+                } else if(sz1 < sz2) {
+                    downPath(p2);
+                } else {
+                    downPath(p1);
+                    downPath(p2);
+                }
+            }
+        }
+
+        return l;
+    }
 
     vector<int> Compress() {
         vector<int> bit;
