@@ -55,8 +55,6 @@ void Radix_Sort_Second(vector<pair<int,int>> &A, int N, int max_value, int sp, i
     }
     if(sp < 0 || sp >= N) return;
 
-    //cout << sp << " " << len << endl;
-
     for(int dig = 1; max_value/dig > 0; dig *= 10) {
         Bucket_Sort_Second(A,N,dig,sp,len);
     }
@@ -65,10 +63,6 @@ void Radix_Sort_Second(vector<pair<int,int>> &A, int N, int max_value, int sp, i
 void Pair_Radix_Sort(vector<pair<int,int>> &A, int N, int max_value) {
 
     Radix_Sort_First(A,N,max_value);
-
-    // cout << "-----------" << endl;
-    // for(int i = 0; i < N; i++) cout << A[i].first << " " << A[i].second << endl;
-    // cout << "-----------" << endl;
 
     int sp = -1; int len = 0, cur = -1;
 
@@ -84,5 +78,5 @@ void Pair_Radix_Sort(vector<pair<int,int>> &A, int N, int max_value) {
         }
     }
 
-    //Radix_Sort_Second(A,N,max_value,sp,len);
+    Radix_Sort_Second(A,N,max_value,sp,len);
 }
