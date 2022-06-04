@@ -5,6 +5,10 @@
 #include<set>
 #include<stack>
 #include<tuple>
+#include <chrono>
+#include <random>
+
+#include "Pair_Radix_Sort.hpp"
 
 using namespace std;
 using uint = unsigned int;
@@ -72,6 +76,8 @@ struct RLSLP{
     void BlockComp() {
         //pre_str:変換前の文字列
         vector<pair<ull,ull>> block;
+        pre_str = str;
+        str = vector<ull>();
         int N = pre_str.size();
         int idx = 0;
         while(idx < N) {
@@ -102,15 +108,32 @@ struct RLSLP{
 
     //strをPairCompする O(|w|log|w|)
     void PairComp() {
-        vector<pair<ull,ull>> edge;
+        pre_str = str;
+        str = vector<ull>();
+        vector<pair<int,int>> edge;
         int N = pre_str.size();
+
         for(int i = 0; i < N-1; i++) {
             edge.push_back({pre_str[i],pre_str[i+1]});
             edge.push_back({pre_str[i+1],pre_str[i]});
         }
-        sort(edge.begin(),edge.end());
+        Pair_Radix_Sort(edge,edge.size(),var+10);
         long long cur = edge[0].first;
+
+        // int l = 0, r = 0;
         unordered_map<ull,char> who;
+        // while(abs(r-l) > 1 || l == 0 || r == 0) {
+        //     who.clear();
+        //     mt19937 mt{random_device{}()};
+        //     uniform_int_distribution<int> dist(0, 1);
+        //     for(auto c : pre_str) {
+        //         if(who[c]) continue;
+        //         else {
+        //             if(dist(mt) == 0) who[c] = 'L', l++;
+        //             else who[c] = 'R', r++;
+        //         }
+        //     }
+        // }
 
         int left_cnt = 0, right_cnt = 0;
         for(int i = 0; i < 2*(N-1);) {
@@ -175,19 +198,18 @@ struct RLSLP{
         // cout << "入力文字列";
         // print_str();
         while(str.size() > 1) {
-            pre_str = str;
-            str = vector<ull>();
             BlockComp();
-            // if(pre_str != str) {
-            //     cout << "BlockComp : ";
-            //     print_str();
-            // }
-            pre_str = str;
-            str = vector<ull>();
+            if(pre_str != str) {
+                //cout << "BlockComp : ";
+                //print_str();
+                // cout << str.size() << endl;
+            }
+            if(str.size() < 2) break;
             PairComp();
-            // cout << "PairComp : ";
-            // if(pre_str != str) print_str();
-            // else break;
+            //cout << "PairComp : ";
+            //if(pre_str != str) print_str();
+            //else break;
+            // cout << str.size() << endl;
         }
         return str.front();
     }
@@ -213,11 +235,14 @@ struct RLSLP{
     }
 
     //左端のindexがiになっている変数or文字を返す
-    void getPath(tuple<ull,int,int> start, int i, stack<tuple<ull,int,int>> &path) {
+    void getPath(tuple<ull,int,int,ull,int> start, int i, stack<tuple<ull,int,int,ull,int>> &path) {
         ull x = get<0>(start); //root
         ull l = get<1>(start), r = get<2>(start);
+        ull pre_x = -1, pre_r = -1;
         while(1) {
-            path.push({x,l,r});
+            path.push({x,l,r,pre_x,pre_r});
+            pre_x = x;
+            pre_r = r;
             if(l == i) break;
             // cout << l << " " << r << endl;
             if(is_RL[x-256]) {
@@ -235,10 +260,36 @@ struct RLSLP{
         return;
     }
 
-    void downPath(stack<tuple<ull,int,int>> &path) {
+    void getPath2(tuple<ull,int,int,ull,int> start, int i, stack<tuple<ull,int,int,ull,int>> &path) {
+        ull x = get<0>(start); //root
+        ull l = get<1>(start), r = get<2>(start);
+        ull pre_x = -1, pre_r = -1;
+        while(1) {
+            path.push({x,l,r,pre_x,pre_r});
+            pre_x = x;
+            pre_r = r;
+            if(l == i && x < 256) break;
+            // cout << l << " " << r << endl;
+            if(is_RL[x-256]) {
+                ull len = (Right_ch[x-256] < 256 ? 1 : length[Right_ch[x-256]-256]);
+                ull k = (i-l)/len;
+                ull prel = l;
+                l = prel+k*len, r = prel+(k+1)*len;
+                x = Right_ch[x-256];
+            } else {
+                ull left_len = (Left_ch[x-256] < 256 ? 1 : length[Left_ch[x-256]-256]);
+                if(i < l + left_len) r = l+left_len, x = Left_ch[x-256];
+                else l = l+left_len, x = Right_ch[x-256];
+            }
+        }
+        return;
+    }
+
+    void downPath(stack<tuple<ull,int,int,ull,int>> &path) {
         auto n = path.top();
         ull x = get<0>(n);
         int l = get<1>(n), r = get<2>(n);
+        ull pre_x = x, pre_r = r;
         if(is_RL[x-256]) {
                 ull len = (Right_ch[x-256] < 256 ? 1 : length[Right_ch[x-256]-256]);
                 ull prel = l;
@@ -248,11 +299,11 @@ struct RLSLP{
                 ull left_len = (Left_ch[x-256] < 256 ? 1 : length[Left_ch[x-256]-256]);
                 r = l+left_len, x = Left_ch[x-256];
         }
-        path.push({x,l,r});
+        path.push({x,l,r,pre_x,pre_r});
     }
 
     //l <= pos < rとなる変数を探す．
-    void upPath(int pos, stack<tuple<ull,int,int>> &path) {
+    void upPath(int pos, stack<tuple<ull,int,int,ull,int>> &path) {
         int l,r;
         while(1) {
             auto n = path.top();
@@ -262,35 +313,65 @@ struct RLSLP{
         }
     }
 
-    ull LCE(int i, int j) {
-        stack<tuple<ull,int,int>> p1,p2;
+    // bool parent_is_RL(stack<tuple<ull,int,int>> path, ull &r) {
+    //     if(path.size() == 1) return 0;
+    //     path.pop();
+    //     auto n = path.top();
+    //     auto v = get<0>(n);
+    //     auto ri = get<2>(n);
+    //     if(v < 256) return 0;
+    //     else {
+    //         r = ri;
+    //         return is_RL[v-256];
+    //     }
+    // }
 
-        getPath({var-1,0,N},i,p1);
-        getPath({var-1,0,N},j,p2);
+    string getString(int i, int l) {
+        stack<tuple<ull,int,int,ull,int>> p;
+        getPath2({var-1,0,N,-1,-1},i,p);
+        string ans = "";
+        int cnt = 0;
+
+        while(1) {
+            auto n = p.top();
+            auto v = get<0>(n);
+            ans += (char)(v);
+            i++;
+            cnt++;
+            if(cnt == l) return ans;
+            upPath(i,p);
+            getPath2(p.top(),i,p);
+        }
+    }
+
+    ull LCE(int i, int j) {
+        stack<tuple<ull,int,int,ull,int>> p1,p2;
+
+        getPath({var-1,0,N,-1,-1},i,p1);
+        getPath({var-1,0,N,-1,-1},j,p2);
 
         ull l = 0;
 
-        // while(p1.size()) {
-        //     cout << p1.top() << " ";
-        //     p1.pop();
-        // }
-        // cout << endl;
-
-        // while(p2.size()) {
-        //     cout << p2.top() << " ";
-        //     p2.pop();
-        // }
-        // cout << endl;
-
         while(1) {
+            // cout << 1 << endl;
             auto n1 = p1.top();
             auto n2 = p2.top();
             auto v1 = get<0>(n1),v2 = get<0>(n2);
             // cout << v1 << " " << v2 << endl;
             // cout << l << endl;
             if(v1 == v2) {
-                if(v1 < 256) l += 1;
-                else l += length[v1-256];
+                ull pv1,pv2,r1,r2;
+                pv1 = get<3>(n1), pv2 = get<3>(n2);
+                r1 = get<4>(n1), r2 = get<4>(n2);
+                if(is_RL[pv1-256] && is_RL[pv2-256]) {
+                    l += min(r1-(i+l),r2-(j+l));
+                } else {
+                    if(v1 < 256) l += 1;
+                    else l += length[v1-256];
+                }
+
+                // if(v1 < 256) l += 1;
+                // else l += length[v1-256];
 
                 if(i+l >= N || j+l >= N) break;
 
@@ -311,6 +392,47 @@ struct RLSLP{
                     downPath(p1);
                     downPath(p2);
                 }
+            }
+        }
+
+        return l;
+    }
+
+    ull LCE2(int i, int j) {
+        stack<tuple<ull,int,int,ull,int>> p1,p2;
+
+        getPath2({var-1,0,N,-1,-1},i,p1);
+        getPath2({var-1,0,N,-1,-1},j,p2);
+
+        ull l = 0;
+
+        while(1) {
+            auto n1 = p1.top();
+            auto n2 = p2.top();
+            auto v1 = get<0>(n1),v2 = get<0>(n2);
+            // cout << v1 << " " << v2 << endl;
+            // cout << l << endl;
+            if(v1 == v2) {
+                ull pv1,pv2,r1,r2;
+                pv1 = get<3>(n1), pv2 = get<3>(n2);
+                r1 = get<4>(n1), r2 = get<4>(n2);
+                if(is_RL[pv1-256] && is_RL[pv2-256]) {
+                    l += min(r1-(i+l),r2-(j+l));
+                } else {
+                    if(v1 < 256) l += 1;
+                    else l += length[v1-256];
+                }
+
+                // if(v1 < 256) l += 1;
+                // else l += length[v1-256];
+
+                if(i+l >= N || j+l >= N) break;
+
+                upPath(i+l,p1);
+                upPath(j+l,p2);
+
+                getPath2(p1.top(),i+l,p1);
+                getPath2(p2.top(),j+l,p2);
             }
         }
 
