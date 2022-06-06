@@ -37,17 +37,17 @@ size_t HashPair::m_hash_pair_random = (size_t) random_device()();
 
 
 struct RLSLP{
-    ull var; //変数
-    ull N; //|S|
-    vector<ull> Left_ch, Right_ch;//左の子，右の子
-    unordered_map<pair<ull,ull>,ull,HashPair> RL_par, not_RL_par; //親へのハッシュ
-    vector<ull> is_RL; //ある変数の子が連長圧縮かどうか
-    vector<ull> str, pre_str;
-    vector<ull> length;
+    int var; //変数
+    int N; //|S|
+    vector<int> Left_ch, Right_ch;//左の子，右の子
+    unordered_map<pair<int,int>,int,HashPair> RL_par, not_RL_par; //親へのハッシュ
+    vector<int> is_RL; //ある変数の子が連長圧縮かどうか
+    vector<int> str, pre_str;
+    vector<int> length;
 
     RLSLP(const string S) : N(S.size()){
         var = 256;
-        for(auto c : S) str.emplace_back((ull)c);
+        for(auto c : S) str.emplace_back((int)c);
     }
 
     void print_str() {
@@ -62,12 +62,12 @@ struct RLSLP{
         }
     }
 
-    bool get_RL_par(ull l, ull r, ull &par) {
+    bool get_RL_par(int l, int r, int &par) {
         if(RL_par.count({l,r})) { par = RL_par[{l,r}]; return true;}
         else return false;
     }
 
-    bool get_not_RL_par(ull l, ull r, ull &par) {
+    bool get_not_RL_par(int l, int r, int &par) {
         if(not_RL_par.count({l,r})) { par = not_RL_par[{l,r}]; return true;}
         else return false;
     }
@@ -75,9 +75,9 @@ struct RLSLP{
     //strをBlockCompする O(|str|)
     void BlockComp() {
         //pre_str:変換前の文字列
-        vector<pair<ull,ull>> block;
+        vector<pair<int,int>> block;
         pre_str = str;
-        str = vector<ull>();
+        str = vector<int>();
         int N = pre_str.size();
         int idx = 0;
         while(idx < N) {
@@ -93,7 +93,7 @@ struct RLSLP{
             auto len = pr.second;
             if(len == 1) str.emplace_back(val);
             else {
-                ull par;
+                int par;
                 if(get_RL_par(len,val,par)) str.emplace_back(par);
                 else {
                     RL_par[{len,val}] = var;
@@ -109,7 +109,7 @@ struct RLSLP{
     //strをPairCompする O(|w|log|w|)
     void PairComp() {
         pre_str = str;
-        str = vector<ull>();
+        str = vector<int>();
         vector<pair<int,int>> edge;
         int N = pre_str.size();
 
@@ -121,7 +121,7 @@ struct RLSLP{
         long long cur = edge[0].first;
 
         // int l = 0, r = 0;
-        unordered_map<ull,char> who;
+        unordered_map<int,int> who;
         // while(abs(r-l) > 1 || l == 0 || r == 0) {
         //     who.clear();
         //     mt19937 mt{random_device{}()};
@@ -138,21 +138,21 @@ struct RLSLP{
         int left_cnt = 0, right_cnt = 0;
         for(int i = 0; i < 2*(N-1);) {
             if(cur == edge[i].first) {
-                ull b = edge[i].second;
-                if(who[b] == 'L') left_cnt++;
-                else if(who[b] == 'R') right_cnt++;
+                int b = edge[i].second;
+                if(who[b] == 0) left_cnt++;
+                else if(who[b] == 1) right_cnt++;
                 i++;
             } else {
                 if(left_cnt <= right_cnt) {
-                    who[cur] = 'L';
-                } else who[cur] = 'R';
+                    who[cur] = 0;
+                } else who[cur] = 1;
                 cur = edge[i].first;
                 left_cnt = right_cnt = 0;
             }
         }
         if(left_cnt <= right_cnt) {
-            who[cur] = 'L';
-        } else who[cur] = 'R';
+            who[cur] = 0;
+        } else who[cur] = 1;
 
         // cout << "            ";
         // for(int i = 0; i < N; i++) cout << who[pre_str[i]] << " ";
@@ -160,8 +160,8 @@ struct RLSLP{
 
         int LR = 0, RL = 0;
         for(int i = 0; i < N-1; i++) {
-            if(who[pre_str[i]] == 'L' && who[pre_str[i+1]] == 'R') LR++;
-            else if(who[pre_str[i]] == 'R' && who[pre_str[i+1]] == 'L') RL++;
+            if(who[pre_str[i]] == 0 && who[pre_str[i+1]] == 1) LR++;
+            else if(who[pre_str[i]] == 1 && who[pre_str[i+1]] == 0) RL++;
         }
 
         bool rev;
@@ -172,10 +172,10 @@ struct RLSLP{
 
         //L,Rのペアがあればまとめる
         for(int i = 0; i < N;) {
-            if(i < N-1 && who[pre_str[i]] == (rev ? 'R' : 'L') && who[pre_str[i+1]] == (rev ? 'L' : 'R')) {
-                ull a = pre_str[i];
-                ull b = pre_str[i+1];
-                ull par;
+            if(i < N-1 && who[pre_str[i]] == (rev ? 1 : 0) && who[pre_str[i+1]] == (rev ? 0 : 1)) {
+                int a = pre_str[i];
+                int b = pre_str[i+1];
+                int par;
                 if(get_not_RL_par(a,b,par)) {
                     str.emplace_back(par);
                 } else {
@@ -194,7 +194,7 @@ struct RLSLP{
     }
 
     //SをRLSLPに変換して，開始記号を返す．
-    ull StoRLSLP() {
+    int StoRLSLP() {
         // cout << "入力文字列";
         // print_str();
         while(str.size() > 1) {
@@ -214,19 +214,19 @@ struct RLSLP{
         return str.front();
     }
 
-    ull get_char(int i) {
-        ull x = var-1;
-        ull l = 0, r = N;
+    int get_char(int i) {
+        int x = var-1;
+        int l = 0, r = N;
         while(r-l > 1) {
             //cout << l << " " << r << endl;
             if(is_RL[x-256]) {
-                ull len = (Right_ch[x-256] < 256 ? 1 : length[Right_ch[x-256]-256]);
-                ull k = (i-l)/len;
-                ull prel = l;
+                int len = (Right_ch[x-256] < 256 ? 1 : length[Right_ch[x-256]-256]);
+                int k = (i-l)/len;
+                int prel = l;
                 l = prel+k*len, r = prel+(k+1)*len;
                 x = Right_ch[x-256];
             } else {
-                ull left_len = (Left_ch[x-256] < 256 ? 1 : length[Left_ch[x-256]-256]);
+                int left_len = (Left_ch[x-256] < 256 ? 1 : length[Left_ch[x-256]-256]);
                 if(i < l + left_len) r = l+left_len, x = Left_ch[x-256];
                 else l = l+left_len, x = Right_ch[x-256];
             }
@@ -235,10 +235,10 @@ struct RLSLP{
     }
 
     //左端のindexがiになっている変数or文字を返す
-    void getPath(tuple<ull,int,int,ull,int> start, int i, stack<tuple<ull,int,int,ull,int>> &path) {
-        ull x = get<0>(start); //root
-        ull l = get<1>(start), r = get<2>(start);
-        ull pre_x = -1, pre_r = -1;
+    void getPath(tuple<int,int,int,int,int> start, int i, stack<tuple<int,int,int,int,int>> &path) {
+        int x = get<0>(start); //root
+        int l = get<1>(start), r = get<2>(start);
+        int pre_x = -1, pre_r = -1;
         while(1) {
             path.push({x,l,r,pre_x,pre_r});
             pre_x = x;
@@ -246,13 +246,13 @@ struct RLSLP{
             if(l == i) break;
             // cout << l << " " << r << endl;
             if(is_RL[x-256]) {
-                ull len = (Right_ch[x-256] < 256 ? 1 : length[Right_ch[x-256]-256]);
-                ull k = (i-l)/len;
-                ull prel = l;
+                int len = (Right_ch[x-256] < 256 ? 1 : length[Right_ch[x-256]-256]);
+                int k = (i-l)/len;
+                int prel = l;
                 l = prel+k*len, r = prel+(k+1)*len;
                 x = Right_ch[x-256];
             } else {
-                ull left_len = (Left_ch[x-256] < 256 ? 1 : length[Left_ch[x-256]-256]);
+                int left_len = (Left_ch[x-256] < 256 ? 1 : length[Left_ch[x-256]-256]);
                 if(i < l + left_len) r = l+left_len, x = Left_ch[x-256];
                 else l = l+left_len, x = Right_ch[x-256];
             }
@@ -260,10 +260,10 @@ struct RLSLP{
         return;
     }
 
-    void getPath2(tuple<ull,int,int,ull,int> start, int i, stack<tuple<ull,int,int,ull,int>> &path) {
-        ull x = get<0>(start); //root
-        ull l = get<1>(start), r = get<2>(start);
-        ull pre_x = -1, pre_r = -1;
+    void getPath2(tuple<int,int,int,int,int> start, int i, stack<tuple<int,int,int,int,int>> &path) {
+        int x = get<0>(start); //root
+        int l = get<1>(start), r = get<2>(start);
+        int pre_x = -1, pre_r = -1;
         while(1) {
             path.push({x,l,r,pre_x,pre_r});
             pre_x = x;
@@ -271,13 +271,13 @@ struct RLSLP{
             if(l == i && x < 256) break;
             // cout << l << " " << r << endl;
             if(is_RL[x-256]) {
-                ull len = (Right_ch[x-256] < 256 ? 1 : length[Right_ch[x-256]-256]);
-                ull k = (i-l)/len;
-                ull prel = l;
+                int len = (Right_ch[x-256] < 256 ? 1 : length[Right_ch[x-256]-256]);
+                int k = (i-l)/len;
+                int prel = l;
                 l = prel+k*len, r = prel+(k+1)*len;
                 x = Right_ch[x-256];
             } else {
-                ull left_len = (Left_ch[x-256] < 256 ? 1 : length[Left_ch[x-256]-256]);
+                int left_len = (Left_ch[x-256] < 256 ? 1 : length[Left_ch[x-256]-256]);
                 if(i < l + left_len) r = l+left_len, x = Left_ch[x-256];
                 else l = l+left_len, x = Right_ch[x-256];
             }
@@ -285,25 +285,25 @@ struct RLSLP{
         return;
     }
 
-    void downPath(stack<tuple<ull,int,int,ull,int>> &path) {
+    void downPath(stack<tuple<int,int,int,int,int>> &path) {
         auto n = path.top();
-        ull x = get<0>(n);
+        int x = get<0>(n);
         int l = get<1>(n), r = get<2>(n);
-        ull pre_x = x, pre_r = r;
+        int pre_x = x, pre_r = r;
         if(is_RL[x-256]) {
-                ull len = (Right_ch[x-256] < 256 ? 1 : length[Right_ch[x-256]-256]);
-                ull prel = l;
+                int len = (Right_ch[x-256] < 256 ? 1 : length[Right_ch[x-256]-256]);
+                int prel = l;
                 l = prel, r = prel+len;
                 x = Right_ch[x-256];
             } else {
-                ull left_len = (Left_ch[x-256] < 256 ? 1 : length[Left_ch[x-256]-256]);
+                int left_len = (Left_ch[x-256] < 256 ? 1 : length[Left_ch[x-256]-256]);
                 r = l+left_len, x = Left_ch[x-256];
         }
         path.push({x,l,r,pre_x,pre_r});
     }
 
     //l <= pos < rとなる変数を探す．
-    void upPath(int pos, stack<tuple<ull,int,int,ull,int>> &path) {
+    void upPath(int pos, stack<tuple<int,int,int,int,int>> &path) {
         int l,r;
         while(1) {
             auto n = path.top();
@@ -313,7 +313,7 @@ struct RLSLP{
         }
     }
 
-    // bool parent_is_RL(stack<tuple<ull,int,int>> path, ull &r) {
+    // bool parent_is_RL(stack<tuple<int,int,int>> path, int &r) {
     //     if(path.size() == 1) return 0;
     //     path.pop();
     //     auto n = path.top();
@@ -327,7 +327,7 @@ struct RLSLP{
     // }
 
     string getString(int i, int l) {
-        stack<tuple<ull,int,int,ull,int>> p;
+        stack<tuple<int,int,int,int,int>> p;
         getPath2({var-1,0,N,-1,-1},i,p);
         string ans = "";
         int cnt = 0;
@@ -344,13 +344,13 @@ struct RLSLP{
         }
     }
 
-    ull LCE(int i, int j) {
-        stack<tuple<ull,int,int,ull,int>> p1,p2;
+    int LCE(int i, int j) {
+        stack<tuple<int,int,int,int,int>> p1,p2;
 
         getPath({var-1,0,N,-1,-1},i,p1);
         getPath({var-1,0,N,-1,-1},j,p2);
 
-        ull l = 0;
+        int l = 0;
 
         while(1) {
             // cout << 1 << endl;
@@ -360,7 +360,7 @@ struct RLSLP{
             // cout << v1 << " " << v2 << endl;
             // cout << l << endl;
             if(v1 == v2) {
-                ull pv1,pv2,r1,r2;
+                int pv1,pv2,r1,r2;
                 pv1 = get<3>(n1), pv2 = get<3>(n2);
                 r1 = get<4>(n1), r2 = get<4>(n2);
                 if(is_RL[pv1-256] && is_RL[pv2-256]) {
@@ -398,13 +398,13 @@ struct RLSLP{
         return l;
     }
 
-    ull LCE2(int i, int j) {
-        stack<tuple<ull,int,int,ull,int>> p1,p2;
+    int LCE2(int i, int j) {
+        stack<tuple<int,int,int,int,int>> p1,p2;
 
         getPath2({var-1,0,N,-1,-1},i,p1);
         getPath2({var-1,0,N,-1,-1},j,p2);
 
-        ull l = 0;
+        int l = 0;
 
         while(1) {
             auto n1 = p1.top();
@@ -413,7 +413,7 @@ struct RLSLP{
             // cout << v1 << " " << v2 << endl;
             // cout << l << endl;
             if(v1 == v2) {
-                ull pv1,pv2,r1,r2;
+                int pv1,pv2,r1,r2;
                 pv1 = get<3>(n1), pv2 = get<3>(n2);
                 r1 = get<4>(n1), r2 = get<4>(n2);
                 if(is_RL[pv1-256] && is_RL[pv2-256]) {
@@ -441,7 +441,7 @@ struct RLSLP{
 
     vector<int> Compress() {
         vector<int> bit;
-        ull g = var;
+        int g = var;
 
         for(int i = 0; i < 64; i++) {
             if(N & (1<<i)) bit.push_back(1);
@@ -468,11 +468,11 @@ struct RLSLP{
         return bit;
     }
 
-    void print_node(ull x, string &ans) {
+    void print_node(int x, string &ans) {
         if(x < 256) ans += (char)x;
         else {
             if(is_RL[x-256]) {
-                ull a = Left_ch[x-256];
+                int a = Left_ch[x-256];
                 for(int _ = 0; _ < a; _++) {
                     print_node(Right_ch[x-256],ans);
                 }
@@ -490,9 +490,9 @@ struct RLSLP{
     }
 
     void cal_len() {
-        length = vector<ull>(var);
+        length = vector<int>(var);
         for(int i = 0; i < var-256; i++) {
-            ull a = Left_ch[i], b = Right_ch[i];
+            int a = Left_ch[i], b = Right_ch[i];
             if(is_RL[i]) {
                 if(b < MAX) length[i] += a; else length[i] += a*length[b-MAX];
             } else {
