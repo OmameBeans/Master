@@ -46,7 +46,7 @@ struct RLSLP{
     vector<int> length;
 
     RLSLP(const string S) : N(S.size()){
-        var = 256;
+        var = MAX;
         for(auto c : S) str.emplace_back((int)c);
     }
 
@@ -57,8 +57,8 @@ struct RLSLP{
 
     void print_rules() {
         cout << "規則集合 X -> A B の形式" << endl;
-        for(int i = 0; i < var-256; i++) {
-            cout << i+256 << " -> " << Left_ch[i] << " " << Right_ch[i] << " 長さは" << length[i]<< endl;
+        for(int i = 0; i < var-MAX; i++) {
+            cout << i+MAX << " -> " << Left_ch[i] << " " << Right_ch[i] << " 長さは" << length[i]<< endl;
         }
     }
 
@@ -154,7 +154,62 @@ struct RLSLP{
             who[cur] = 0;
         } else who[cur] = 1;
 
-        // cout << "            ";
+        // cout << "-------------" << endl;
+        // for(int i = 0; i < N; i++) cout << who[pre_str[i]] << " ";
+        // cout << endl;
+
+        int LR = 0, RL = 0;
+        for(int i = 0; i < N-1; i++) {
+            if(who[pre_str[i]] == 0 && who[pre_str[i+1]] == 1) LR++;
+            else if(who[pre_str[i]] == 1 && who[pre_str[i+1]] == 0) RL++;
+        }
+
+        bool rev;
+        rev = (LR < RL);
+        if(rev) swap(LR,RL);
+
+        //cout << "元の文字列から" << (double)(pre_str.size()-LR)/pre_str.size() << "小さくなりました" << endl;
+
+        //L,Rのペアがあればまとめる
+        for(int i = 0; i < N;) {
+            if(i < N-1 && who[pre_str[i]] == (rev ? 1 : 0) && who[pre_str[i+1]] == (rev ? 0 : 1)) {
+                int a = pre_str[i];
+                int b = pre_str[i+1];
+                int par;
+                if(get_not_RL_par(a,b,par)) {
+                    str.emplace_back(par);
+                } else {
+                    not_RL_par[{a,b}] = var;
+                    str.emplace_back(var);
+                    is_RL.emplace_back(0);
+                    Left_ch.emplace_back(a), Right_ch.emplace_back(b);
+                    var++;
+                }
+                i += 2;
+            } else {
+                str.emplace_back(pre_str[i]);
+                i++;
+            }
+        }       
+    }
+
+    void PairComp2() {
+        pre_str = str;
+        str = vector<int>();
+        unordered_map<int,int> who, visited;
+        int N = pre_str.size();
+
+        random_device seed;
+        mt19937 mt(seed());
+        uniform_int_distribution<int> dist(0,1);
+
+        for(int i = 0; i < N; i++) {
+            if(visited[pre_str[i]]) continue;
+            visited[pre_str[i]] = 1;
+            who[pre_str[i]] = dist(mt);
+        }
+
+        // cout << "-------------" << endl;
         // for(int i = 0; i < N; i++) cout << who[pre_str[i]] << " ";
         // cout << endl;
 
@@ -205,6 +260,7 @@ struct RLSLP{
                 // cout << str.size() << endl;
             }
             if(str.size() < 2) break;
+            //PairComp2();
             PairComp();
             //cout << "PairComp : ";
             //if(pre_str != str) print_str();
@@ -219,16 +275,16 @@ struct RLSLP{
         int l = 0, r = N;
         while(r-l > 1) {
             //cout << l << " " << r << endl;
-            if(is_RL[x-256]) {
-                int len = (Right_ch[x-256] < 256 ? 1 : length[Right_ch[x-256]-256]);
+            if(is_RL[x-MAX]) {
+                int len = (Right_ch[x-MAX] < MAX ? 1 : length[Right_ch[x-MAX]-MAX]);
                 int k = (i-l)/len;
                 int prel = l;
                 l = prel+k*len, r = prel+(k+1)*len;
-                x = Right_ch[x-256];
+                x = Right_ch[x-MAX];
             } else {
-                int left_len = (Left_ch[x-256] < 256 ? 1 : length[Left_ch[x-256]-256]);
-                if(i < l + left_len) r = l+left_len, x = Left_ch[x-256];
-                else l = l+left_len, x = Right_ch[x-256];
+                int left_len = (Left_ch[x-MAX] < MAX ? 1 : length[Left_ch[x-MAX]-MAX]);
+                if(i < l + left_len) r = l+left_len, x = Left_ch[x-MAX];
+                else l = l+left_len, x = Right_ch[x-MAX];
             }
         }
         return x;
@@ -245,16 +301,16 @@ struct RLSLP{
             pre_r = r;
             if(l == i) break;
             // cout << l << " " << r << endl;
-            if(is_RL[x-256]) {
-                int len = (Right_ch[x-256] < 256 ? 1 : length[Right_ch[x-256]-256]);
+            if(is_RL[x-MAX]) {
+                int len = (Right_ch[x-MAX] < MAX ? 1 : length[Right_ch[x-MAX]-MAX]);
                 int k = (i-l)/len;
                 int prel = l;
                 l = prel+k*len, r = prel+(k+1)*len;
-                x = Right_ch[x-256];
+                x = Right_ch[x-MAX];
             } else {
-                int left_len = (Left_ch[x-256] < 256 ? 1 : length[Left_ch[x-256]-256]);
-                if(i < l + left_len) r = l+left_len, x = Left_ch[x-256];
-                else l = l+left_len, x = Right_ch[x-256];
+                int left_len = (Left_ch[x-MAX] < MAX ? 1 : length[Left_ch[x-MAX]-MAX]);
+                if(i < l + left_len) r = l+left_len, x = Left_ch[x-MAX];
+                else l = l+left_len, x = Right_ch[x-MAX];
             }
         }
         return;
@@ -268,18 +324,18 @@ struct RLSLP{
             path.push({x,l,r,pre_x,pre_r});
             pre_x = x;
             pre_r = r;
-            if(l == i && x < 256) break;
+            if(l == i && x < MAX) break;
             // cout << l << " " << r << endl;
-            if(is_RL[x-256]) {
-                int len = (Right_ch[x-256] < 256 ? 1 : length[Right_ch[x-256]-256]);
+            if(is_RL[x-MAX]) {
+                int len = (Right_ch[x-MAX] < MAX ? 1 : length[Right_ch[x-MAX]-MAX]);
                 int k = (i-l)/len;
                 int prel = l;
                 l = prel+k*len, r = prel+(k+1)*len;
-                x = Right_ch[x-256];
+                x = Right_ch[x-MAX];
             } else {
-                int left_len = (Left_ch[x-256] < 256 ? 1 : length[Left_ch[x-256]-256]);
-                if(i < l + left_len) r = l+left_len, x = Left_ch[x-256];
-                else l = l+left_len, x = Right_ch[x-256];
+                int left_len = (Left_ch[x-MAX] < MAX ? 1 : length[Left_ch[x-MAX]-MAX]);
+                if(i < l + left_len) r = l+left_len, x = Left_ch[x-MAX];
+                else l = l+left_len, x = Right_ch[x-MAX];
             }
         }
         return;
@@ -290,14 +346,14 @@ struct RLSLP{
         int x = get<0>(n);
         int l = get<1>(n), r = get<2>(n);
         int pre_x = x, pre_r = r;
-        if(is_RL[x-256]) {
-                int len = (Right_ch[x-256] < 256 ? 1 : length[Right_ch[x-256]-256]);
+        if(is_RL[x-MAX]) {
+                int len = (Right_ch[x-MAX] < MAX ? 1 : length[Right_ch[x-MAX]-MAX]);
                 int prel = l;
                 l = prel, r = prel+len;
-                x = Right_ch[x-256];
+                x = Right_ch[x-MAX];
             } else {
-                int left_len = (Left_ch[x-256] < 256 ? 1 : length[Left_ch[x-256]-256]);
-                r = l+left_len, x = Left_ch[x-256];
+                int left_len = (Left_ch[x-MAX] < MAX ? 1 : length[Left_ch[x-MAX]-MAX]);
+                r = l+left_len, x = Left_ch[x-MAX];
         }
         path.push({x,l,r,pre_x,pre_r});
     }
@@ -319,10 +375,10 @@ struct RLSLP{
     //     auto n = path.top();
     //     auto v = get<0>(n);
     //     auto ri = get<2>(n);
-    //     if(v < 256) return 0;
+    //     if(v < MAX) return 0;
     //     else {
     //         r = ri;
-    //         return is_RL[v-256];
+    //         return is_RL[v-MAX];
     //     }
     // }
 
@@ -363,15 +419,15 @@ struct RLSLP{
                 int pv1,pv2,r1,r2;
                 pv1 = get<3>(n1), pv2 = get<3>(n2);
                 r1 = get<4>(n1), r2 = get<4>(n2);
-                if(is_RL[pv1-256] && is_RL[pv2-256]) {
+                if(is_RL[pv1-MAX] && is_RL[pv2-MAX]) {
                     l += min(r1-(i+l),r2-(j+l));
                 } else {
-                    if(v1 < 256) l += 1;
-                    else l += length[v1-256];
+                    if(v1 < MAX) l += 1;
+                    else l += length[v1-MAX];
                 }
 
-                // if(v1 < 256) l += 1;
-                // else l += length[v1-256];
+                // if(v1 < MAX) l += 1;
+                // else l += length[v1-MAX];
 
                 if(i+l >= N || j+l >= N) break;
 
@@ -381,8 +437,8 @@ struct RLSLP{
                 getPath(p1.top(),i+l,p1);
                 getPath(p2.top(),j+l,p2);
             } else {
-                auto sz1 = (v1 < 256 ? 1 : length[v1-256]);
-                auto sz2 = (v2 < 256 ? 1 : length[v2-256]);
+                auto sz1 = (v1 < MAX ? 1 : length[v1-MAX]);
+                auto sz2 = (v2 < MAX ? 1 : length[v2-MAX]);
                 if(sz1 == 1 && sz2 == 1) break;
                 if(sz1 > sz2) {
                     downPath(p1);
@@ -416,15 +472,15 @@ struct RLSLP{
                 int pv1,pv2,r1,r2;
                 pv1 = get<3>(n1), pv2 = get<3>(n2);
                 r1 = get<4>(n1), r2 = get<4>(n2);
-                if(is_RL[pv1-256] && is_RL[pv2-256]) {
+                if(is_RL[pv1-MAX] && is_RL[pv2-MAX]) {
                     l += min(r1-(i+l),r2-(j+l));
                 } else {
-                    if(v1 < 256) l += 1;
-                    else l += length[v1-256];
+                    if(v1 < MAX) l += 1;
+                    else l += length[v1-MAX];
                 }
 
-                // if(v1 < 256) l += 1;
-                // else l += length[v1-256];
+                // if(v1 < MAX) l += 1;
+                // else l += length[v1-MAX];
 
                 if(i+l >= N || j+l >= N) break;
 
@@ -450,10 +506,10 @@ struct RLSLP{
 
         int sz = log2(N);
         for(int i = 0; i < sz; i++) {
-            if((var-256) & (1<<i)) bit.push_back(1);
+            if((var-MAX) & (1<<i)) bit.push_back(1);
             else bit.push_back(0);
         }
-        for(int i = 0; i < var-256; i++) {
+        for(int i = 0; i < var-MAX; i++) {
             for(int i = 0; i < sz; i++) {
                 if(Left_ch[i] & (1<<i)) bit.push_back(1);
                 else bit.push_back(0);
@@ -469,16 +525,16 @@ struct RLSLP{
     }
 
     void print_node(int x, string &ans) {
-        if(x < 256) ans += (char)x;
+        if(x < MAX) ans += (char)x;
         else {
-            if(is_RL[x-256]) {
-                int a = Left_ch[x-256];
+            if(is_RL[x-MAX]) {
+                int a = Left_ch[x-MAX];
                 for(int _ = 0; _ < a; _++) {
-                    print_node(Right_ch[x-256],ans);
+                    print_node(Right_ch[x-MAX],ans);
                 }
             } else {
-                print_node(Left_ch[x-256],ans);
-                print_node(Right_ch[x-256],ans);
+                print_node(Left_ch[x-MAX],ans);
+                print_node(Right_ch[x-MAX],ans);
             }
         }
     }
@@ -491,7 +547,7 @@ struct RLSLP{
 
     void cal_len() {
         length = vector<int>(var);
-        for(int i = 0; i < var-256; i++) {
+        for(int i = 0; i < var-MAX; i++) {
             int a = Left_ch[i], b = Right_ch[i];
             if(is_RL[i]) {
                 if(b < MAX) length[i] += a; else length[i] += a*length[b-MAX];
