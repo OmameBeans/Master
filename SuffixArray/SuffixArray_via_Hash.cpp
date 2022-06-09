@@ -4,8 +4,6 @@
 #include <random>
 #include <chrono>
 
-#include "../RLSLP/RLSLP.h"
-
 using namespace std;
 
 struct RollingHash {
