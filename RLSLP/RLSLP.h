@@ -59,7 +59,7 @@ struct RLSLP{
         cout << "規則集合 X -> A B の形式" << endl;
         for(int i = 0; i < var-MAX; i++) {
             cout << i+MAX << " -> " << Left_ch[i] << " " << Right_ch[i] << " 長さは" << length[i]<< endl;
-        }
+        } 
     }
 
     bool get_RL_par(int l, int r, int &par) {
@@ -260,8 +260,8 @@ struct RLSLP{
                 // cout << str.size() << endl;
             }
             if(str.size() < 2) break;
-            //PairComp2();
-            PairComp();
+            PairComp2();
+            //PairComp();
             //cout << "PairComp : ";
             //if(pre_str != str) print_str();
             //else break;
@@ -369,18 +369,6 @@ struct RLSLP{
         }
     }
 
-    // bool parent_is_RL(stack<tuple<int,int,int>> path, int &r) {
-    //     if(path.size() == 1) return 0;
-    //     path.pop();
-    //     auto n = path.top();
-    //     auto v = get<0>(n);
-    //     auto ri = get<2>(n);
-    //     if(v < MAX) return 0;
-    //     else {
-    //         r = ri;
-    //         return is_RL[v-MAX];
-    //     }
-    // }
 
     string getString(int i, int l) {
         stack<tuple<int,int,int,int,int>> p;
