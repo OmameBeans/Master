@@ -5,7 +5,7 @@
 
 using namespace std;
 
-struct HashPair {
+struct Hashpair2 {
 
     static size_t m_hash_pair_random;
 
@@ -23,13 +23,13 @@ struct HashPair {
     }
 };
 
-size_t HashPair::m_hash_pair_random = (size_t) random_device()();
+size_t Hashpair2::m_hash_pair_random = (size_t) random_device()();
 
 struct RePair {
     int n; //規則の数
     vector<int> L, R;
     vector<int> str;
-    unordered_map<pair<int,int>,int,HashPair> parent;
+    unordered_map<pair<int,int>,int,Hashpair2> parent;
     const int Alphabet_Size = 256;
 
     RePair(string S_) {
@@ -80,7 +80,7 @@ struct RePair {
         for(auto s : str) cout << s << " ";
         cout << endl;
 
-        cout << "生成規則" << endl;
+        cout << "生成規則 " << Alphabet_Size << "~" << n-1 << endl;
         for(int i = 0; i < n-Alphabet_Size; i++) cout << i+Alphabet_Size << " ---> "<< L[i] << " " << R[i] << endl;
     }
 };
