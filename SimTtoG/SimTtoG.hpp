@@ -2,28 +2,7 @@
 #include <vector>
 #include<unordered_map>
 #include <random>
-
-using namespace std;
-
-struct HashPair {
-
-    static size_t m_hash_pair_random;
-
-    template<class T1, class T2>
-    size_t operator()(const pair<T1, T2> &p) const {
-
-        auto hash1 = hash<T1>{}(p.first);
-        auto hash2 = hash<T2>{}(p.second);
-
-        size_t seed = 0;
-        seed ^= hash1 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-        seed ^= hash2 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-        seed ^= m_hash_pair_random + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-        return seed;
-    }
-};
-
-size_t HashPair::m_hash_pair_random = (size_t) random_device()();
+#include "../HashPair/HashPair.hpp"
 
 struct SimTtoG {
 
@@ -68,7 +47,7 @@ struct SimTtoG {
     void print_D() {
         cout << n << endl;
         for(int i = 0; i < n; i++) {
-                cout << i+MAX << " LML : " << LML[i]<< " " << " RML : " << RML[i] <<  "---> ";
+                cout << i+MAX << " 展開長 " << len[i]  << " (LML : " << LML[i]<< " " << " RML : " << RML[i] <<  ") ---> ";
                 for(int j = 0; j < D[i].size(); j++) cout << D[i][j] << " ";
                 cout << endl;
         }
@@ -100,6 +79,7 @@ struct SimTtoG {
 
     void cal_len() {
         for(int i = 0; i < n; i++) {
+            len[i] = 0;
             for(int j = 0; j < D[i].size(); j++) {
                 int now_char = D[i][j];
                 if(now_char < MAX || now_char >= MAX+Var_SLP) len[i]++;
@@ -176,67 +156,68 @@ struct SimTtoG {
                     }
                 }
 
-                if(j == 0) {
-                    //PoPoutLet
-                    if(LorR.count(x) && LorR[x] == 1) {
-                        len[i]--;
-                        continue;
-                    } else D[i].push_back(x);
-
-                } else if(j == pre_D[i].size()-1) {
-                    //PoPoutLet
-                    if(LorR.count(x) && LorR[x] == 0) {
-                        len[i]--;
-                        continue;
-                    } else D[i].push_back(x);
-
+                if(x < MAX || MAX+n <= x) {
+                    D[i].push_back(x);
                 } else {
-                    if(x < MAX || MAX+n <= x) {
-                        if(D[i].size() == 0) D[i].push_back(x);
-                        else {
-                            if(!LorR.count(D[i].back()) || !LorR.count(x)) D[i].push_back(x);
+                    int lml = LML[x-MAX];
+                    int rml = RML[x-MAX];
+
+                    if(LorR[lml] == 1) D[i].push_back(lml);
+
+                    if(len[x-MAX] != 0) D[i].push_back(x);
+
+                    if(LorR[rml] == 0) D[i].push_back(rml);
+                }
+            }
+
+            if(i < n-1) {
+                if(D[i].size() > 0) {
+                    if(LorR.count(D[i].front()) && LorR[D[i].front()] == 1) {
+                        cout << i+MAX << "から" << *D[i].begin() << "を消す" << endl; 
+                        D[i].erase(D[i].begin());
+                        len[i]--;
+                    }
+                }
+                if(D[i].size() > 0) {
+                    if(LorR.count(D[i].back()) && LorR[D[i].back()] == 0) {
+                    cout << i+MAX << "から" << D[i].back() << "を消す" << endl; 
+                        D[i].pop_back();
+                        len[i]--;
+                    }
+                }
+            }
+
+            auto pre_Di = D[i];
+            D[i].clear();
+
+            for(int j = 0; j < pre_Di.size();) {
+                if(j < pre_Di.size()-1) {
+                    int a = pre_Di[j];
+                    int b = pre_Di[j+1];
+                    if((a < MAX || n+MAX <= a) && (b < MAX || n+MAX <= b)) {
+                        if(LorR[a] == 0 && LorR[b] == 1) {
+                            if(not_RL_par.count({a,b})) D[i].push_back(not_RL_par[{a,b}]);
                             else {
-                                if(LorR[D[i].back()] == 0 && LorR[x] == 1) {
-                                    int db = D[i].back();
-                                    D[i].pop_back();
-                                    if(not_RL_par.count({db,x})) D[i].push_back(not_RL_par[{db,x}]);
-                                    else {
-                                        D[i].push_back(var_RLSLP);
-                                        not_RL_par[{db,x}] = var_RLSLP;
-                                        var_RLSLP++;
-                                    }
-                                }
+                                D[i].push_back(var_RLSLP);
+                                not_RL_par[{a,b}] = var_RLSLP;
+                                RLSLP_L.push_back(a);
+                                RLSLP_R.push_back(b);
+                                var_RLSLP++;
                             }
+
+                            j += 2;
+
+                        } else {
+                            D[i].push_back(a);
+                            j++;
                         }
                     } else {
-                        int lml = LML[x-MAX];
-                        int rml = RML[x-MAX];
-
-                        if(LorR[lml] == 1) {
-                            if(D[i].size() == 0) D[i].push_back(lml);
-                            else {
-                                int db = D[i].back();
-                                if(!LorR.count(db) || !LorR.count(lml)) D[i].push_back(lml);
-                                else {
-                                    if(LorR[db] == 0 && LorR[lml] == 1) {
-                                        D[i].pop_back();
-                                        if(not_RL_par.count({db,lml})) D[i].push_back(not_RL_par[{db,lml}]);
-                                        else {
-                                            D[i].push_back(var_RLSLP);
-                                            not_RL_par[{db,lml}] = var_RLSLP;
-                                            RLSLP_L.push_back(db);
-                                            RLSLP_R.push_back(lml);
-                                            var_RLSLP++;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        D[i].push_back(x);
-
-                        if(LorR[rml] == 0) D[i].push_back(rml);  
+                        D[i].push_back(a);
+                        j++;
                     }
+                } else {
+                    D[i].push_back(pre_Di[j]);
+                    j++;
                 }
             }
         }
@@ -256,6 +237,7 @@ struct SimTtoG {
                 if(now_char < MAX || MAX+n <= now_char) D[i].push_back(now_char);
                 else {
                     if(block_left[now_char-MAX] != len[now_char-MAX]) {
+                        len[i] -= block_left[now_char-MAX] + block_right[now_char-MAX];
                         for(int _ = 0; _ < block_left[now_char-MAX]; _++) {
                             D[i].push_back(LML[now_char-MAX]);
                         }
@@ -271,29 +253,29 @@ struct SimTtoG {
                 }
             }
 
-            pre_Di = D[i];
-            D[i].clear();
+            // pre_Di = D[i];
+            // D[i].clear();
 
-            for(int j = 0; j < pre_Di.size();) {
-                int now_char = pre_Di[j];
-                int cnt = 1;
-                if(MAX <= now_char && now_char < MAX+n) {
-                    D[i].push_back(now_char);
-                    j++;
-                    continue;
-                }
-                while(j+cnt < pre_Di.size() && now_char == pre_Di[j+cnt]) {
-                    cnt++;
-                }
-                if(RL_par.count({cnt,now_char})) D[i].push_back(not_RL_par[{cnt,now_char}]);
-                else {
-                    D[i].push_back(var_RLSLP);
-                    RL_par[{cnt,now_char}] = var_RLSLP;
-                    RLSLP_L.push_back(cnt);
-                    RLSLP_R.push_back(now_char);
-                    var_RLSLP++;
-                }
-            }
+            // for(int j = 0; j < pre_Di.size();) {
+            //     int now_char = pre_Di[j];
+            //     int cnt = 1;
+            //     if(MAX <= now_char && now_char < MAX+n) {
+            //         D[i].push_back(now_char);
+            //         j++;
+            //         continue;
+            //     }
+            //     while(j+cnt < pre_Di.size() && now_char == pre_Di[j+cnt]) {
+            //         cnt++;
+            //     }
+            //     if(RL_par.count({cnt,now_char})) D[i].push_back(not_RL_par[{cnt,now_char}]);
+            //     else {
+            //         D[i].push_back(var_RLSLP);
+            //         RL_par[{cnt,now_char}] = var_RLSLP;
+            //         RLSLP_L.push_back(cnt);
+            //         RLSLP_R.push_back(now_char);
+            //         var_RLSLP++;
+            //     }
+            // }
         }
         print_D();
     }
