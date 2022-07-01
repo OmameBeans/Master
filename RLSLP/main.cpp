@@ -69,7 +69,6 @@ int main(int argc, char *argv[]) {
 
         RLSLP RL(S);
         RL.StoRLSLP();
-        RL.cal_len();
 
         for(int q = 0; q < Q; q++) {
             int i,j; cin >> i >> j;

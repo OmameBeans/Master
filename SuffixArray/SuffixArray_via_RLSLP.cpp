@@ -4,7 +4,7 @@
 #include <random>
 #include <chrono>
 
-#include "../RLSLP/Program/RLSLP.h"
+#include "../RLSLP/RLSLP.h"
 
 using namespace std;
 
@@ -30,7 +30,6 @@ int main() {
     start = chrono::system_clock::now();
     RLSLP rlslp(S);
     rlslp.StoRLSLP();
-    rlslp.cal_len();
     end = chrono::system_clock::now();
     time = chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
     printf("RLSLPの構築時間 : %.10f [ms] \n", time);

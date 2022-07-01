@@ -11,9 +11,6 @@
 #include "Pair_Radix_Sort.hpp"
 
 using namespace std;
-using uint = unsigned int;
-using ull = unsigned long long;
-const int MAX = 256;
 
 struct HashPair {
 
@@ -39,6 +36,7 @@ size_t HashPair::m_hash_pair_random = (size_t) random_device()();
 struct RLSLP{
     int var; //変数
     int N; //|S|
+    int MAX = 256; //アルファベットサイズ
     vector<int> Left_ch, Right_ch;//左の子，右の子
     unordered_map<pair<int,int>,int,HashPair> RL_par, not_RL_par; //親へのハッシュ
     vector<int> is_RL; //ある変数の子が連長圧縮かどうか
@@ -52,6 +50,11 @@ struct RLSLP{
 
     void print_str() {
         for(auto c : str) cout << c << " ";
+        cout << endl;
+    }
+
+    void print_length() {
+        for(auto c : length) cout << c << " ";
         cout << endl;
     }
 
@@ -120,20 +123,7 @@ struct RLSLP{
         Pair_Radix_Sort(edge,edge.size(),var+10);
         long long cur = edge[0].first;
 
-        // int l = 0, r = 0;
         unordered_map<int,int> who;
-        // while(abs(r-l) > 1 || l == 0 || r == 0) {
-        //     who.clear();
-        //     mt19937 mt{random_device{}()};
-        //     uniform_int_distribution<int> dist(0, 1);
-        //     for(auto c : pre_str) {
-        //         if(who[c]) continue;
-        //         else {
-        //             if(dist(mt) == 0) who[c] = 'L', l++;
-        //             else who[c] = 'R', r++;
-        //         }
-        //     }
-        // }
 
         int left_cnt = 0, right_cnt = 0;
         for(int i = 0; i < 2*(N-1);) {
@@ -153,10 +143,6 @@ struct RLSLP{
         if(left_cnt <= right_cnt) {
             who[cur] = 0;
         } else who[cur] = 1;
-
-        // cout << "-------------" << endl;
-        // for(int i = 0; i < N; i++) cout << who[pre_str[i]] << " ";
-        // cout << endl;
 
         int LR = 0, RL = 0;
         for(int i = 0; i < N-1; i++) {
@@ -248,25 +234,30 @@ struct RLSLP{
         }       
     }
 
+    void cal_len() {
+        length = vector<int>(var);
+        for(int i = 0; i < var-MAX; i++) {
+            int a = Left_ch[i], b = Right_ch[i];
+            if(is_RL[i]) {
+                if(b < MAX) length[i] += a; else length[i] += a*length[b-MAX];
+            } else {
+                if(a < MAX) length[i] += 1; else length[i] += length[a-MAX];
+                if(b < MAX) length[i] += 1; else length[i] += length[b-MAX];
+            }
+        }
+        // cout << var << endl;
+        // for(int i = 0; i < var-MAX; i++) cout << length[i] << " ";
+        // cout << endl;
+    }
+
     //SをRLSLPに変換して，開始記号を返す．
     int StoRLSLP() {
-        // cout << "入力文字列";
-        // print_str();
         while(str.size() > 1) {
             BlockComp();
-            if(pre_str != str) {
-                //cout << "BlockComp : ";
-                //print_str();
-                // cout << str.size() << endl;
-            }
             if(str.size() < 2) break;
             PairComp2();
-            //PairComp();
-            //cout << "PairComp : ";
-            //if(pre_str != str) print_str();
-            //else break;
-            // cout << str.size() << endl;
         }
+        cal_len();
         return str.front();
     }
 
@@ -531,18 +522,5 @@ struct RLSLP{
         string ans = "";
         print_node(var-1,ans);
         return ans;
-    }
-
-    void cal_len() {
-        length = vector<int>(var);
-        for(int i = 0; i < var-MAX; i++) {
-            int a = Left_ch[i], b = Right_ch[i];
-            if(is_RL[i]) {
-                if(b < MAX) length[i] += a; else length[i] += a*length[b-MAX];
-            } else {
-                if(a < MAX) length[i] += 1; else length[i] += length[a-MAX];
-                if(b < MAX) length[i] += 1; else length[i] += length[b-MAX];
-            }
-        }
     }
 };
