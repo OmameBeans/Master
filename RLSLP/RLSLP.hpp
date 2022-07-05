@@ -204,68 +204,79 @@ struct RLSLP{
         uniform_int_distribution<int> dist(0,1);
 
         for(int i = 0; i < N; i++) {
-            if(visited[pre_str[i]]) continue;
-            visited[pre_str[i]] = 1;
-            who[pre_str[i]] = dist(mt);
+            if(!visited[pre_str[i]]) {
+                visited[pre_str[i]] = 1;
+                who[pre_str[i]] = dist(mt);
+            }
+
+            int now_char = pre_str[i];
+
+            if(str.size() == 0) str.emplace_back(now_char);
+            else {
+                int pre_char = str.back();
+                if(who[pre_char] == 0 && who[now_char] == 1) {
+                    str.pop_back();
+                    int par;
+                    if(get_not_RL_par(pre_char,now_char,par)) {
+                        str.emplace_back(par);
+                    } else {
+                        not_RL_par[{pre_char,now_char}] = var;
+                        str.emplace_back(var);
+                        is_RL.emplace_back(0);
+                        Left_ch.emplace_back(pre_char), Right_ch.emplace_back(now_char);
+                        var++;
+                    }
+                } else {
+                    str.emplace_back(now_char);
+                }
+            }
         }
 
         // cout << "-------------" << endl;
         // for(int i = 0; i < N; i++) cout << who[pre_str[i]] << " ";
         // cout << endl;
 
-        int LR = 0, RL = 0;
-        for(int i = 0; i < N-1; i++) {
-            if(who[pre_str[i]] == 0 && who[pre_str[i+1]] == 1) LR++;
-            else if(who[pre_str[i]] == 1 && who[pre_str[i+1]] == 0) RL++;
-        }
+        // int LR = 0, RL = 0;
+        // for(int i = 0; i < N-1; i++) {
+        //     if(who[pre_str[i]] == 0 && who[pre_str[i+1]] == 1) LR++;
+        //     else if(who[pre_str[i]] == 1 && who[pre_str[i+1]] == 0) RL++;
+        // }
 
-        bool rev;
-        rev = (LR < RL);
-        if(rev) swap(LR,RL);
+        // bool rev;
+        // rev = (LR < RL);
+        // if(rev) swap(LR,RL);
 
-        //cout << "元の文字列から" << (double)(pre_str.size()-LR)/pre_str.size() << "小さくなりました" << endl;
+        // //cout << "元の文字列から" << (double)(pre_str.size()-LR)/pre_str.size() << "小さくなりました" << endl;
 
-        //L,Rのペアがあればまとめる
-        for(int i = 0; i < N;) {
-            if(i < N-1 && who[pre_str[i]] == (rev ? 1 : 0) && who[pre_str[i+1]] == (rev ? 0 : 1)) {
-                int a = pre_str[i];
-                int b = pre_str[i+1];
-                int par;
-                if(get_not_RL_par(a,b,par)) {
-                    str.emplace_back(par);
-                } else {
-                    not_RL_par[{a,b}] = var;
-                    str.emplace_back(var);
-                    is_RL.emplace_back(0);
-                    Left_ch.emplace_back(a), Right_ch.emplace_back(b);
-                    var++;
-                }
-                i += 2;
-            } else {
-                str.emplace_back(pre_str[i]);
-                i++;
-            }
-        }       
+        // //L,Rのペアがあればまとめる
+        // for(int i = 0; i < N;) {
+        //     if(i < N-1 && who[pre_str[i]] == (rev ? 1 : 0) && who[pre_str[i+1]] == (rev ? 0 : 1)) {
+        //         int a = pre_str[i];
+        //         int b = pre_str[i+1];
+        //         int par;
+        //         if(get_not_RL_par(a,b,par)) {
+        //             str.emplace_back(par);
+        //         } else {
+        //             not_RL_par[{a,b}] = var;
+        //             str.emplace_back(var);
+        //             is_RL.emplace_back(0);
+        //             Left_ch.emplace_back(a), Right_ch.emplace_back(b);
+        //             var++;
+        //         }
+        //         i += 2;
+        //     } else {
+        //         str.emplace_back(pre_str[i]);
+        //         i++;
+        //     }
+        // }       
     }
 
     //SをRLSLPに変換して，開始記号を返す．
     int StoRLSLP() {
-        // cout << "入力文字列";
-        // print_str();
         while(str.size() > 1) {
             BlockComp();
-            if(pre_str != str) {
-                //cout << "BlockComp : ";
-                //print_str();
-                // cout << str.size() << endl;
-            }
             if(str.size() < 2) break;
             PairComp2();
-            //PairComp();
-            //cout << "PairComp : ";
-            //if(pre_str != str) print_str();
-            //else break;
-            // cout << str.size() << endl;
         }
         return str.front();
     }
