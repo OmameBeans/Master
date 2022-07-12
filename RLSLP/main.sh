@@ -7,4 +7,7 @@ g++ -O2 main.cpp
 ./a.out -i ../../data/tm29 -o tm29
 
 ./a.out -i ../../data/proteins.001.1 -o proteins
+
 ./a.out -i ../../data/sources.001.2 -o sources
+
+./a.out -i ../../data/einstein.en.txt -o einstein

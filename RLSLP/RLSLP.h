@@ -303,12 +303,13 @@ struct RLSLP{
     }
 
     //左端のindexがiになっている変数or文字を返す
-    void getPath(tuple<int,int,int,int,int> start, int i, stack<tuple<int,int,int,int,int>> &path) {
+    void getPath(tuple<int,int,int,int,int> start, int i, stack<tuple<int,int,int,int,int>> &path, int &ret) {
         int x = get<0>(start); //root
         int l = get<1>(start), r = get<2>(start);
         int pre_x = -1, pre_r = -1;
         while(1) {
             path.push({x,l,r,pre_x,pre_r});
+            ret++;
             pre_x = x;
             pre_r = r;
             if(l == i) break;
@@ -353,7 +354,7 @@ struct RLSLP{
         return;
     }
 
-    void downPath(stack<tuple<int,int,int,int,int>> &path) {
+    void downPath(stack<tuple<int,int,int,int,int>> &path, int &ret) {
         auto n = path.top();
         int x = get<0>(n);
         int l = get<1>(n), r = get<2>(n);
@@ -368,13 +369,15 @@ struct RLSLP{
                 r = l+left_len, x = Left_ch[x-MAX];
         }
         path.push({x,l,r,pre_x,pre_r});
+        ret++;
     }
 
     //l <= pos < rとなる変数を探す．
-    void upPath(int pos, stack<tuple<int,int,int,int,int>> &path) {
+    void upPath(int pos, stack<tuple<int,int,int,int,int>> &path, int &ret) {
         int l,r;
         while(1) {
             auto n = path.top();
+            ret++;
             l = get<1>(n), r = get<2>(n);
             if(l <= pos && pos < r) break;
             else path.pop();
@@ -387,6 +390,7 @@ struct RLSLP{
         getPath2({var-1,0,N,-1,-1},i,p);
         string ans = "";
         int cnt = 0;
+        int ret = 0;
 
         while(1) {
             auto n = p.top();
@@ -395,16 +399,16 @@ struct RLSLP{
             i++;
             cnt++;
             if(cnt == l) return ans;
-            upPath(i,p);
+            upPath(i,p,ret);
             getPath2(p.top(),i,p);
         }
     }
 
-    int LCE(int i, int j, int &comp) {
+    int LCE(int i, int j, int &ret) {
         stack<tuple<int,int,int,int,int>> p1,p2;
 
-        getPath({var-1,0,N,-1,-1},i,p1);
-        getPath({var-1,0,N,-1,-1},j,p2);
+        getPath({var-1,0,N,-1,-1},i,p1,ret);
+        getPath({var-1,0,N,-1,-1},j,p2,ret);
 
         int l = 0;
 
@@ -413,7 +417,7 @@ struct RLSLP{
             auto n1 = p1.top();
             auto n2 = p2.top();
             auto v1 = get<0>(n1),v2 = get<0>(n2);
-            comp++;
+            ret++;
             // cout << v1 << " " << v2 << endl;
             // cout << l << endl;
             if(v1 == v2) {
@@ -432,22 +436,22 @@ struct RLSLP{
 
                 if(i+l >= N || j+l >= N) break;
 
-                upPath(i+l,p1);
-                upPath(j+l,p2);
+                upPath(i+l,p1,ret);
+                upPath(j+l,p2,ret);
 
-                getPath(p1.top(),i+l,p1);
-                getPath(p2.top(),j+l,p2);
+                getPath(p1.top(),i+l,p1,ret);
+                getPath(p2.top(),j+l,p2,ret);
             } else {
                 auto sz1 = (v1 < MAX ? 1 : length[v1-MAX]);
                 auto sz2 = (v2 < MAX ? 1 : length[v2-MAX]);
                 if(sz1 == 1 && sz2 == 1) break;
                 if(sz1 > sz2) {
-                    downPath(p1);
+                    downPath(p1,ret);
                 } else if(sz1 < sz2) {
-                    downPath(p2);
+                    downPath(p2,ret);
                 } else {
-                    downPath(p1);
-                    downPath(p2);
+                    downPath(p1,ret);
+                    downPath(p2,ret);
                 }
             }
         }
@@ -455,7 +459,7 @@ struct RLSLP{
         return l;
     }
 
-    int LCE2(int i, int j, int &comp) {
+    int LCE2(int i, int j, int &ret) {
         stack<tuple<int,int,int,int,int>> p1,p2;
 
         getPath2({var-1,0,N,-1,-1},i,p1);
@@ -464,7 +468,7 @@ struct RLSLP{
         int l = 0;
 
         while(1) {
-            comp++;
+            ret++;
             auto n1 = p1.top();
             auto n2 = p2.top();
             auto v1 = get<0>(n1),v2 = get<0>(n2);
@@ -482,8 +486,8 @@ struct RLSLP{
 
                 if(i+l >= N || j+l >= N) break;
 
-                upPath(i+l,p1);
-                upPath(j+l,p2);
+                upPath(i+l,p1,ret);
+                upPath(j+l,p2,ret);
 
                 getPath2(p1.top(),i+l,p1);
                 getPath2(p2.top(),j+l,p2);

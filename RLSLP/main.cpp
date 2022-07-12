@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
             long double m1;
             int ret;
 
-            for(int _ = 0; _ < 10; _++) {
+            for(int _ = 0; _ < 1; _++) {
                 s1 = std::chrono::high_resolution_clock::now();
                 ret = 0;
                 l = RL.LCE(i,j,ret);
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
 
             min_time = numeric_limits<long double>::max();
             
-            for(int _ = 0; _ < 10; _++) {
+            for(int _ = 0; _ < 1; _++) {
                 s1 = std::chrono::high_resolution_clock::now();
                 ret = 0;
                 l = RL.LCE2(i,j,ret);
@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
         //out_stream << cnt << endl;
         for(int i = 0; i < N+1; i++) {
             if(lce_cnt1[i]) {
-                out_stream << i << " " << ave_time1[i] << " " << ave_time2[i] << " " << cmp1[i] << " " << cmp2[i] << endl;
+                out_stream << i << " " << lce_cnt1[i] << " " << ave_time1[i] << " " << ave_time2[i] << " " << cmp1[i] << " " << cmp2[i] << endl;
             }
         }
     }
