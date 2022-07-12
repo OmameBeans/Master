@@ -44,12 +44,13 @@ int main(int argc, char *argv[]) {
         for (uint64_t i = 0; i < bytesize; ++i) {
             char c;
             in_stream.read((char*) & c, sizeof(c)); // 文字を読み込む
-            if(c != ' ' && c != '\n') S += c; // 文字を書き込む
+            if(c != '\n') S += c; // 文字を書き込む
         }
 
         int N = S.size();
 
         // out_stream << N << endl << S << endl;
+        cout << in_filename << " " << "size : " << N << endl;
 
         long long total_lce = 0;
 
