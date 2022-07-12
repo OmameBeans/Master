@@ -31,12 +31,21 @@ struct RePair {
     vector<int> str;
     unordered_map<pair<int,int>,int,Hashpair2> parent;
     const int Alphabet_Size = 256;
+    int hight = 0;
 
     RePair(string S_) {
         n = Alphabet_Size;
         for(int i = 0; i < S_.size(); i++) {
             str.push_back((int)S_[i]);
         }
+    }
+
+    int get_hight() {
+        return hight;
+    }
+
+    int get_num_n() {
+        return n - Alphabet_Size;
     }
 
     void make_pair() {
@@ -72,15 +81,17 @@ struct RePair {
 
     void Comp() {
         while(str.size() > 1) {
-            for(auto s : str) cout << s << " ";
-            cout << endl;
+            // for(auto s : str) cout << s << " ";
+            // cout << endl;
             make_pair();
+            hight++;
         }
+        hight++;
 
-        for(auto s : str) cout << s << " ";
-        cout << endl;
+        // for(auto s : str) cout << s << " ";
+        // cout << endl;
 
-        cout << "生成規則 " << Alphabet_Size << "~" << n-1 << endl;
-        for(int i = 0; i < n-Alphabet_Size; i++) cout << i+Alphabet_Size << " ---> "<< L[i] << " " << R[i] << endl;
+        // cout << "生成規則 " << Alphabet_Size << "~" << n-1 << endl;
+        // for(int i = 0; i < n-Alphabet_Size; i++) cout << i+Alphabet_Size << " ---> "<< L[i] << " " << R[i] << endl;
     }
 };

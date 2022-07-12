@@ -45,6 +45,8 @@ struct RLSLP{
     vector<int> str, pre_str;
     vector<int> length;
 
+    int hight = 0;
+
     RLSLP(const string S) : N(S.size()){
         var = MAX;
         for(auto c : S) str.emplace_back((int)c);
@@ -275,10 +277,20 @@ struct RLSLP{
     int StoRLSLP() {
         while(str.size() > 1) {
             BlockComp();
+            if(str.size() != pre_str.size()) hight++;
             if(str.size() < 2) break;
             PairComp2();
+            if(str.size() != pre_str.size()) hight++;
         }
         return str.front();
+    }
+
+    int get_hight() {
+        return hight;
+    }
+
+    int get_num_var() {
+        return var-MAX;
     }
 
     int get_char(int i) {

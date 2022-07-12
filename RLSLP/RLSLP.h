@@ -43,6 +43,8 @@ struct RLSLP{
     vector<int> str, pre_str;
     vector<int> length;
 
+    int hight = 0;
+
     RLSLP(const string S) : N(S.size()){
         var = MAX;
         for(auto c : S) str.emplace_back((int)c);
@@ -200,10 +202,10 @@ struct RLSLP{
         // cout << endl;
 
         int LR = 0, RL = 0;
-        for(int i = 0; i < N-1; i++) {
-            if(who[pre_str[i]] == 0 && who[pre_str[i+1]] == 1) LR++;
-            else if(who[pre_str[i]] == 1 && who[pre_str[i+1]] == 0) RL++;
-        }
+        // for(int i = 0; i < N-1; i++) {
+        //     if(who[pre_str[i]] == 0 && who[pre_str[i+1]] == 1) LR++;
+        //     else if(who[pre_str[i]] == 1 && who[pre_str[i+1]] == 0) RL++;
+        // }
 
         bool rev;
         rev = (LR < RL);
@@ -254,11 +256,21 @@ struct RLSLP{
     int StoRLSLP() {
         while(str.size() > 1) {
             BlockComp();
+            if(str.size() != pre_str.size()) hight++;
             if(str.size() < 2) break;
             PairComp2();
+            if(str.size() != pre_str.size()) hight++;
         }
         cal_len();
         return str.front();
+    }
+
+    int get_hight() {
+        return hight;
+    }
+
+    int get_num_var() {
+        return var-MAX;
     }
 
     int get_char(int i) {

@@ -11,4 +11,5 @@ int main() {
 
     SimTtoG RL(RP.n-RP.Alphabet_Size,RP.L,RP.R);
     RL.PComp();
+    RL.BComp();
 }

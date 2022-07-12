@@ -16,12 +16,9 @@ using namespace std;
 using uint = unsigned int;
 using ull = unsigned long long;
 
-int lce(int i, int j, string S) {
+int lce(int i, int j, string &S) {
     int ans = 0;
-    for(int cnt = 0; j+cnt < S.size(); cnt++) {
-        if(S[i+cnt] != S[j+cnt]) break;
-        ans++;
-    }
+    while(i+ans < S.size() && j+ans < S.size() && S[i+ans] == S[j+ans]) ans++;
     return ans;
 }
 
@@ -29,13 +26,14 @@ int lce(int i, int j, string S) {
 int main(int argc, char *argv[]) {
     cmdline::parser p; // parser を定義
     p.add<string>("input_file",  'i', "input file name",  true);
-    // p.add<string>("output_file", 'o', "output file name", true);
+    p.add<string>("output_file", 'o', "output file name", true);
 
     p.parse_check(argc, argv);
     const string in_filename = p.get<string>("input_file");
-    // const string out_filename = p.get<string>("output_file") + ".bin";
+    const string out_filename = p.get<string>("output_file") + "_result.txt";
 
     std::ifstream in_stream(in_filename);
+    std::ofstream out_stream(out_filename);
 
     // cout << "in_filename = " << in_filename << endl;
     // cout << "out_filename = " << out_filename << endl;
@@ -43,25 +41,19 @@ int main(int argc, char *argv[]) {
     const uint64_t bytesize = in_stream.seekg(0, std::ios::end).tellg();
     in_stream.clear(); // フラグを元に戻す
     in_stream.seekg(0, std::ios::beg); // 読み込み位置を先頭に戻す
-    // cout << "in_bytesize = " << bytesize << endl;
 
-    // const string out_file = p.get<string>("output_file");
-
-    // string out_file_byte = string(out_file).append(".bin");
-    // {
-    //     std::ofstream out_stream(out_file_byte);
-    // }
 
     {
-        // std::ofstream out_stream(out_file_byte);
-
-
         cin.rdbuf(in_stream.rdbuf());
 
-        int N,Q; cin >> N >> Q;
+        int N,Q; cin >> N;
         string S; cin >> S;
+        cin >> Q;
 
+        out_stream << "文字列の長さ : " << N << endl << "クエリ数 : " << Q << endl; 
         cout << "文字列の長さ : " << N << endl << "クエリ数 : " << Q << endl; 
+
+        long long total_lce = 0;
 
         vector<int> a(Q), b(Q), l(Q), r(Q);
 
@@ -69,6 +61,16 @@ int main(int argc, char *argv[]) {
 
         RLSLP RL(S);
         RL.StoRLSLP();
+        RL.cal_len();
+
+        auto t2 = std::chrono::high_resolution_clock::now(); // 現在時刻を取得
+        double millisec = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(); // 実行時間のミリ秒を計算
+        out_stream << "導出木の高さ : " << RL.get_hight() << " " << "文法サイズ : " << RL.get_num_var() << endl;
+        cout << "導出木の高さ : " << RL.get_hight() << " " << "文法サイズ : " << RL.get_num_var() << endl;
+        out_stream << "RLSLPでの構築時間 : " << millisec << " [ms]" << std::endl;
+        cout << "RLSLPでの構築時間 : " << millisec << " [ms]" << std::endl;
+
+        t1 = std::chrono::high_resolution_clock::now(); // 現在時刻を取得
 
         for(int q = 0; q < Q; q++) {
             int i,j; cin >> i >> j;
@@ -76,9 +78,10 @@ int main(int argc, char *argv[]) {
             a[q] = RL.LCE(i,j);
         }
 
-        auto t2 = std::chrono::high_resolution_clock::now(); // 現在時刻を取得
-        double millisec = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(); // 実行時間のミリ秒を計算
-        std::cout << "RLSLPでのLCE : " << millisec << " ms" << std::endl;
+        t2 = std::chrono::high_resolution_clock::now(); // 現在時刻を取得
+        millisec = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(); // 実行時間のミリ秒を計算
+        out_stream << "LCEの計算時間(RLSLP) : " << millisec << " [ms]" << std::endl;
+        cout << "LCEの計算時間(RLSLP) : " << millisec << " [ms]" << std::endl;
 
         t1 = std::chrono::high_resolution_clock::now(); // 現在時刻を取得
 
@@ -89,14 +92,19 @@ int main(int argc, char *argv[]) {
 
         t2 = std::chrono::high_resolution_clock::now(); // 現在時刻を取得
         millisec = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(); // 実行時間のミリ秒を計算
-        std::cout << "愚直にLCE : " << millisec << " ms" << std::endl;
+        out_stream << "LCEの計算時間(愚直に) : " << millisec << " [ms]" << std::endl;
+        cout << "LCEの計算時間(愚直に) : " << millisec << " [ms]" << std::endl;
 
         for(int i = 0; i < Q; i++) {
+            total_lce += a[i];
             if(a[i] != b[i]) {
                 cout << "Diff" << endl;
                 cout << l[i] << " " << r[i] << " " << a[i] << " " << b[i] << endl;
             }
         }
+
+        out_stream << "LCEの合計 : " << total_lce << endl;
+        cout << "LCEの合計 : " << total_lce << endl;
 
 
         // vector<int> out = RL.Compress();
