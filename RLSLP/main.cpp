@@ -16,13 +16,6 @@ using namespace std;
 using uint = unsigned int;
 using ull = unsigned long long;
 
-int lce(int i, int j, string &S) {
-    int ans = 0;
-    while(i+ans < S.size() && j+ans < S.size() && S[i+ans] == S[j+ans]) ans++;
-    return ans;
-}
-
-
 int main(int argc, char *argv[]) {
     cmdline::parser p; // parser を定義
     p.add<string>("input_file",  'i', "input file name",  true);
@@ -46,75 +39,103 @@ int main(int argc, char *argv[]) {
     {
         cin.rdbuf(in_stream.rdbuf());
 
-        int N,Q; cin >> N;
-        string S; cin >> S;
-        cin >> Q;
+        string S = "";
 
-        out_stream << "文字列の長さ : " << N << endl << "クエリ数 : " << Q << endl; 
-        cout << "文字列の長さ : " << N << endl << "クエリ数 : " << Q << endl; 
+        for (uint64_t i = 0; i < bytesize; ++i) {
+            char c;
+            in_stream.read((char*) & c, sizeof(c)); // 文字を読み込む
+            if(c != ' ' && c != '\n') S += c; // 文字を書き込む
+        }
+
+        int N = S.size();
+
+        // out_stream << N << endl << S << endl;
 
         long long total_lce = 0;
-
-        vector<int> a(Q), b(Q), l(Q), r(Q);
 
         auto t1 = std::chrono::high_resolution_clock::now(); // 現在時刻を取得
 
         RLSLP RL(S);
         RL.StoRLSLP();
-        RL.cal_len();
 
         auto t2 = std::chrono::high_resolution_clock::now(); // 現在時刻を取得
         double millisec = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(); // 実行時間のミリ秒を計算
-        out_stream << "導出木の高さ : " << RL.get_hight() << " " << "文法サイズ : " << RL.get_num_var() << endl;
+        // out_stream << "導出木の高さ : " << RL.get_hight() << " " << "文法サイズ : " << RL.get_num_var() << endl;
         cout << "導出木の高さ : " << RL.get_hight() << " " << "文法サイズ : " << RL.get_num_var() << endl;
-        out_stream << "RLSLPでの構築時間 : " << millisec << " [ms]" << std::endl;
-        cout << "RLSLPでの構築時間 : " << millisec << " [ms]" << std::endl;
+        // out_stream << "RLSLPの構築時間 : " << millisec << " [ms]" << std::endl;
+        cout << "RLSLPの構築時間 : " << millisec << " [ms]" << std::endl;
 
-        t1 = std::chrono::high_resolution_clock::now(); // 現在時刻を取得
+        vector<long double> ave_time1(N+1), ave_time2(N+1);
+        vector<long double> lce_cnt1(N+1), lce_cnt2(N+1);
+        vector<long double> cmp1(N+1), cmp2(N+1);
 
-        for(int q = 0; q < Q; q++) {
-            int i,j; cin >> i >> j;
-            l[q] = i, r[q] = j;
-            a[q] = RL.LCE(i,j);
+        auto start = std::chrono::high_resolution_clock::now();
+        auto end = start;
+
+        random_device seed;
+        mt19937 mt(seed());
+        uniform_int_distribution<int> dist2(0,N-1);
+
+        while(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() <= 30*60000) {
+            int i = dist2(mt);
+            int j = dist2(mt);
+            if(i == j) continue;
+
+            int l = 0;
+
+            long double min_time = numeric_limits<long double>::max();
+
+            auto s1 = std::chrono::high_resolution_clock::now();
+            auto e1 = std::chrono::high_resolution_clock::now();
+            long double m1;
+            int ret;
+
+            for(int _ = 0; _ < 10; _++) {
+                s1 = std::chrono::high_resolution_clock::now();
+                ret = 0;
+                l = RL.LCE(i,j,ret);
+                total_lce += l;
+                e1 = std::chrono::high_resolution_clock::now();
+                m1 = std::chrono::duration_cast<std::chrono::nanoseconds>(e1 - s1).count();
+                min_time = min(min_time,m1);
+            }
+
+            if(lce_cnt1[i] >= 1000) continue;
+
+            ave_time1[l] = ((ave_time1[l] * lce_cnt1[l]) + min_time)/(lce_cnt1[l] + 1);
+            cmp1[l] = ((cmp1[l]*lce_cnt1[l] + ret))/(lce_cnt1[l] + 1);
+            lce_cnt1[l]++;
+
+            min_time = numeric_limits<long double>::max();
+            
+            for(int _ = 0; _ < 10; _++) {
+                s1 = std::chrono::high_resolution_clock::now();
+                ret = 0;
+                l = RL.LCE2(i,j,ret);
+                e1 = std::chrono::high_resolution_clock::now();
+                m1 = std::chrono::duration_cast<std::chrono::nanoseconds>(e1 - s1).count();
+                min_time = min(m1,min_time);
+            }
+
+            ave_time2[l] = ((ave_time2[l] * lce_cnt2[l]) + min_time)/(lce_cnt2[l] + 1);
+            cmp2[l] = ((cmp2[l]*lce_cnt1[l] + ret))/(lce_cnt1[l] + 1);
+            lce_cnt2[l]++;
+
+            end = std::chrono::high_resolution_clock::now();
         }
 
-        t2 = std::chrono::high_resolution_clock::now(); // 現在時刻を取得
-        millisec = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(); // 実行時間のミリ秒を計算
-        out_stream << "LCEの計算時間(RLSLP) : " << millisec << " [ms]" << std::endl;
-        cout << "LCEの計算時間(RLSLP) : " << millisec << " [ms]" << std::endl;
+        // out_stream << "total_lce is " << total_lce << endl;
 
-        t1 = std::chrono::high_resolution_clock::now(); // 現在時刻を取得
+        int cnt = 0;
 
+        for(int i = 0; i < N+1; i++) if(lce_cnt1[i]) cnt++;
 
-        for(int q = 0; q < Q; q++) {
-            b[q] = lce(l[q],r[q],S);
-        }
-
-        t2 = std::chrono::high_resolution_clock::now(); // 現在時刻を取得
-        millisec = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(); // 実行時間のミリ秒を計算
-        out_stream << "LCEの計算時間(愚直に) : " << millisec << " [ms]" << std::endl;
-        cout << "LCEの計算時間(愚直に) : " << millisec << " [ms]" << std::endl;
-
-        for(int i = 0; i < Q; i++) {
-            total_lce += a[i];
-            if(a[i] != b[i]) {
-                cout << "Diff" << endl;
-                cout << l[i] << " " << r[i] << " " << a[i] << " " << b[i] << endl;
+        //out_stream << cnt << endl;
+        for(int i = 0; i < N+1; i++) {
+            if(lce_cnt1[i]) {
+                out_stream << i << " " << ave_time1[i] << " " << ave_time2[i] << " " << cmp1[i] << " " << cmp2[i] << endl;
             }
         }
-
-        out_stream << "LCEの合計 : " << total_lce << endl;
-        cout << "LCEの合計 : " << total_lce << endl;
-
-
-        // vector<int> out = RL.Compress();
-        // for(auto p : out) cout << p;
-        // cout << endl;
-        // for(auto b : out) {
-        //     out_stream.write((char*) & b, sizeof(char));
-        // }
-        // const uint64_t out_size = out_stream.seekp(0, std::ios::end).tellp();
-        // cout << "out_bytesize = " << out_size/8.0 << endl;
     }
 
     return 1;

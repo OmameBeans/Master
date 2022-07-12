@@ -191,11 +191,12 @@ struct RLSLP{
         mt19937 mt(seed());
         uniform_int_distribution<int> dist(0,1);
 
-        for(int i = 0; i < N; i++) {
-            if(visited[pre_str[i]]) continue;
-            visited[pre_str[i]] = 1;
-            who[pre_str[i]] = dist(mt);
-        }
+        // for(int i = 0; i < N; i++) {
+        //     if(!visited[pre_str[i]]) { 
+        //         visited[pre_str[i]] = 1;
+        //         who[pre_str[i]] = dist(mt);
+        //     }
+        // }
 
         // cout << "-------------" << endl;
         // for(int i = 0; i < N; i++) cout << who[pre_str[i]] << " ";
@@ -215,6 +216,14 @@ struct RLSLP{
 
         //L,Rのペアがあればまとめる
         for(int i = 0; i < N;) {
+            if(!visited[pre_str[i]]) { 
+                visited[pre_str[i]] = 1;
+                who[pre_str[i]] = dist(mt);
+            }
+            if(i+1 < N && !visited[pre_str[i+1]]) { 
+                visited[pre_str[i+1]] = 1;
+                who[pre_str[i+1]] = dist(mt);
+            }
             if(i < N-1 && who[pre_str[i]] == (rev ? 1 : 0) && who[pre_str[i+1]] == (rev ? 0 : 1)) {
                 int a = pre_str[i];
                 int b = pre_str[i+1];
@@ -391,7 +400,7 @@ struct RLSLP{
         }
     }
 
-    int LCE(int i, int j) {
+    int LCE(int i, int j, int &comp) {
         stack<tuple<int,int,int,int,int>> p1,p2;
 
         getPath({var-1,0,N,-1,-1},i,p1);
@@ -404,6 +413,7 @@ struct RLSLP{
             auto n1 = p1.top();
             auto n2 = p2.top();
             auto v1 = get<0>(n1),v2 = get<0>(n2);
+            comp++;
             // cout << v1 << " " << v2 << endl;
             // cout << l << endl;
             if(v1 == v2) {
@@ -445,7 +455,7 @@ struct RLSLP{
         return l;
     }
 
-    int LCE2(int i, int j) {
+    int LCE2(int i, int j, int &comp) {
         stack<tuple<int,int,int,int,int>> p1,p2;
 
         getPath2({var-1,0,N,-1,-1},i,p1);
@@ -454,6 +464,7 @@ struct RLSLP{
         int l = 0;
 
         while(1) {
+            comp++;
             auto n1 = p1.top();
             auto n2 = p2.top();
             auto v1 = get<0>(n1),v2 = get<0>(n2);
@@ -463,12 +474,8 @@ struct RLSLP{
                 int pv1,pv2,r1,r2;
                 pv1 = get<3>(n1), pv2 = get<3>(n2);
                 r1 = get<4>(n1), r2 = get<4>(n2);
-                if(is_RL[pv1-MAX] && is_RL[pv2-MAX]) {
-                    l += min(r1-(i+l),r2-(j+l));
-                } else {
-                    if(v1 < MAX) l += 1;
-                    else l += length[v1-MAX];
-                }
+
+                l++;
 
                 // if(v1 < MAX) l += 1;
                 // else l += length[v1-MAX];
@@ -480,6 +487,8 @@ struct RLSLP{
 
                 getPath2(p1.top(),i+l,p1);
                 getPath2(p2.top(),j+l,p2);
+            } else {
+                break;
             }
         }
 
