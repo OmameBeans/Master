@@ -8,7 +8,7 @@ struct SimTtoG {
 
     using Production_rule = vector<vector<int>>;
 
-    int MAX = 256;
+    int MAX = 256; //アルファベットの最大値+1
     int Var_SLP; //現在最大の変数
     int var_RLSLP;
     int n; //SLPの変数の数
@@ -45,6 +45,8 @@ struct SimTtoG {
     }
 
     void print_D() {
+        cal_len();
+        cal_LML_RML();
         cout << n << endl;
         for(int i = 0; i < n; i++) {
                 cout << i+MAX << " 展開長 " << len[i]  << " (LML : " << LML[i]<< " " << " RML : " << RML[i] <<  ") ---> ";
@@ -131,30 +133,28 @@ struct SimTtoG {
         }
     }
 
-    void PComp() {
-        auto pre_D = D;
-        unordered_map<int,int> LorR; // Left : 0, Right : 1
-
+    void assign_LorR(unordered_map<int,int> &LorR, Production_rule &D) {
         random_device seed;
         mt19937 mt(seed());
         uniform_int_distribution<int> rd(0,1);
 
-        cal_LML_RML();
-
-        //各生成規則の右辺を変換していく
         for(int i = 0; i < n; i++) {
-            D[i].clear();
-            for(int j = 0; j < pre_D[i].size(); j++) {
+            for(int j = 0; j < D[i].size(); j++) {
+                int x = D[i][j];
 
-                auto x = pre_D[i][j];
-
-                // ペアの左か右かを割り当てる
                 if(x < MAX || MAX+n <= x) {
                     if(!LorR.count(x)) {
                         LorR[x] = rd(mt);
-                        cout << x << " " << "LorR " << LorR[x] << endl;
                     }
                 }
+            }
+        }
+    }
+
+    void PopInLet(Production_rule &D, Production_rule &pre_D, unordered_map<int,int> &LorR) {
+        for(int i = 0; i < n; i++) {
+            for(int j = 0; j < pre_D[i].size(); j++) {
+                int x = pre_D[i][j];
 
                 if(x < MAX || MAX+n <= x) {
                     D[i].push_back(x);
@@ -169,7 +169,11 @@ struct SimTtoG {
                     if(LorR[rml] == 0) D[i].push_back(rml);
                 }
             }
+        }
+    }
 
+    void PopOutLet(Production_rule &D, unordered_map<int,int> &LorR) {
+        for(int i = 0; i < n; i++) {
             if(i < n-1) {
                 if(D[i].size() > 0) {
                     if(LorR.count(D[i].front()) && LorR[D[i].front()] == 1) {
@@ -186,7 +190,23 @@ struct SimTtoG {
                     }
                 }
             }
+        }
+    }
 
+    void PComp() {
+        auto pre_D = D;
+        unordered_map<int,int> LorR; // Left : 0, Right : 1
+
+        cal_LML_RML();
+
+        D = vector<vector<int>>(n);
+
+        assign_LorR(LorR, pre_D);
+        PopInLet(D,pre_D,LorR);
+        PopOutLet(D,LorR);
+
+        //各生成規則の右辺を変換していく
+        for(int i = 0; i < n; i++) {
             auto pre_Di = D[i];
             D[i].clear();
 
@@ -221,7 +241,6 @@ struct SimTtoG {
                 }
             }
         }
-        print_D();
     }
 
     void BComp() {
@@ -277,14 +296,22 @@ struct SimTtoG {
             //     }
             // }
         }
-        print_D();
     }
 
     void ReComp() {
         int cnt = 0;
+        print_D();
         while(cnt < 10) {
+            cout << "Bcomp前" << endl;
+            print_D();
             BComp();
+            cout << "Bcomp後" << endl;
+            print_D();
+            cout << "Pcomp前" << endl;
+            print_D();
             PComp();
+            cout << "Pcomp後" << endl;
+            print_D();
             cnt++;
         }
     }
