@@ -1,15 +1,15 @@
 #include <iostream>
 #include <vector>
+#include <algorithm>
 #include<unordered_map>
 #include <random>
-#include "../HashPair/HashPair.hpp"
+#include "HashPair.hpp"
 
 struct SimTtoG {
 
     using Production_rule = vector<vector<int>>;
 
     int MAX = 256; //アルファベットの最大値+1
-    int Var_SLP; //現在最大の変数
     int var_RLSLP;
     int n; //SLPの変数の数
     vector<int> RLSLP_L, RLSLP_R;
@@ -31,11 +31,13 @@ struct SimTtoG {
             コンストラクタ
             SLPの生成規則の右辺はMAX以上を想定
     */
-    SimTtoG(int N, const vector<int> &L, const vector<int> &R) : n(N) {
+    SimTtoG(int N, const vector<int> &L, const vector<int> &R, int _MAX) : n(N) {
         len.assign(n,0); 
         D.assign(n,vector<int>());
-        Var_SLP = MAX;
+        MAX = _MAX;
         var_RLSLP = MAX+n;
+        LML.assign(n,-1);
+        RML.assign(n,-1);
 
         for(int i = 0; i < n; i++) {
             D[i].push_back(L[i]);
@@ -45,11 +47,12 @@ struct SimTtoG {
     }
 
     void print_D() {
-        cal_len();
-        cal_LML_RML();
+        cal_len(D);
+        cal_LML_RML(D);
+        cal_block_length(D);
         cout << n << endl;
         for(int i = 0; i < n; i++) {
-                cout << i+MAX << " 展開長 " << len[i]  << " (LML : " << LML[i]<< " " << " RML : " << RML[i] <<  ") ---> ";
+                cout << i+MAX << " 展開長 " << len[i]  << " " << "ブロック長 : " << block_left[i] << " " << block_right[i] << " (LML : " << LML[i]<< " " << " RML : " << RML[i] <<  ") ---> ";
                 for(int j = 0; j < D[i].size(); j++) cout << D[i][j] << " ";
                 cout << endl;
         }
@@ -57,11 +60,12 @@ struct SimTtoG {
     }
 
     //LMLとRMLを計算する
-    void cal_LML_RML() {
-        LML.assign(n,-1);
-        RML.assign(n,-1);
+    void cal_LML_RML(Production_rule &D) {
         for(int i = 0; i < n; i++) {
-            if(D[i].size() == 0) continue;
+            if(D[i].size() == 0) {
+                LML[i] = RML[i] = -1;
+                continue;
+            }
             int most_left_letter = D[i].front();
             int most_right_letter = D[i].back();
 
@@ -79,18 +83,18 @@ struct SimTtoG {
         }
     }
 
-    void cal_len() {
+    void cal_len(Production_rule &D) {
         for(int i = 0; i < n; i++) {
             len[i] = 0;
             for(int j = 0; j < D[i].size(); j++) {
                 int now_char = D[i][j];
-                if(now_char < MAX || now_char >= MAX+Var_SLP) len[i]++;
+                if(now_char < MAX || now_char >= MAX+n) len[i]++;
                 else len[i] += len[now_char-MAX];
             }
         }
     }
 
-    void cal_block_length() {
+    void cal_block_length(Production_rule &D) {
         block_left.assign(n,0);
         block_right.assign(n,0);
 
@@ -162,11 +166,20 @@ struct SimTtoG {
                     int lml = LML[x-MAX];
                     int rml = RML[x-MAX];
 
-                    if(LorR[lml] == 1) D[i].push_back(lml);
+                    if(LorR[lml] == 1) {
+                        D[i].push_back(lml);
+                        len[x-MAX]--;
+                    }
+
+                    if(LorR[rml] == 0) {
+                        len[x-MAX]--;
+                    }
 
                     if(len[x-MAX] != 0) D[i].push_back(x);
 
-                    if(LorR[rml] == 0) D[i].push_back(rml);
+                    if(LorR[rml] == 0) {
+                        D[i].push_back(rml);
+                    }
                 }
             }
         }
@@ -179,14 +192,12 @@ struct SimTtoG {
                     if(LorR.count(D[i].front()) && LorR[D[i].front()] == 1) {
                         cout << i+MAX << "から" << *D[i].begin() << "を消す" << endl; 
                         D[i].erase(D[i].begin());
-                        len[i]--;
                     }
                 }
                 if(D[i].size() > 0) {
                     if(LorR.count(D[i].back()) && LorR[D[i].back()] == 0) {
                     cout << i+MAX << "から" << D[i].back() << "を消す" << endl; 
                         D[i].pop_back();
-                        len[i]--;
                     }
                 }
             }
@@ -197,7 +208,7 @@ struct SimTtoG {
         auto pre_D = D;
         unordered_map<int,int> LorR; // Left : 0, Right : 1
 
-        cal_LML_RML();
+        cal_LML_RML(pre_D);
 
         D = vector<vector<int>>(n);
 
@@ -244,64 +255,85 @@ struct SimTtoG {
     }
 
     void BComp() {
-        cal_len();
-        cal_LML_RML();
-        cal_block_length();
+        cal_len(D);
+        cal_LML_RML(D);
+        cal_block_length(D);
 
         for(int i = 0; i < n; i++) {
-            auto pre_Di = D[i];
+            auto pre = D[i];
             D[i].clear();
-            for(int j = 0; j < pre_Di.size(); j++) {
-                int now_char = pre_Di[j];
-                if(now_char < MAX || MAX+n <= now_char) D[i].push_back(now_char);
-                else {
-                    if(block_left[now_char-MAX] != len[now_char-MAX]) {
-                        len[i] -= block_left[now_char-MAX] + block_right[now_char-MAX];
-                        for(int _ = 0; _ < block_left[now_char-MAX]; _++) {
-                            D[i].push_back(LML[now_char-MAX]);
+            for(int j = 0; j < pre.size(); j++) {
+                int x = pre[j];
+                if(x < MAX || MAX+n <= x) {
+                    D[i].emplace_back(x);
+                } else {
+                    int lml = LML[x-MAX];
+                    int rml = RML[x-MAX];
+                    for(int _ = 0; _ < block_left[x-MAX]; _++) {
+                        D[i].emplace_back(lml);
+                    }
+                    if(len[x-MAX] == block_left[x-MAX]) continue;
+                    else {
+                        if(len[x-MAX] != block_left[x-MAX] + block_right[x-MAX]) {
+                            D[i].emplace_back(x);
                         }
-                        D[i].push_back(now_char);
-                        for(int _ = 0; _ < block_right[now_char-MAX]; _++) {
-                            D[i].push_back(RML[now_char-MAX]);
-                        }
-                    } else {
-                        for(int _ = 0; _ < block_left[now_char-MAX]; _++) {
-                            D[i].push_back(LML[now_char-MAX]);
+                        for(int _ = 0; _ < block_right[x-MAX]; _++) {
+                            D[i].emplace_back(rml);
                         }
                     }
                 }
             }
 
-            // pre_Di = D[i];
-            // D[i].clear();
+            if(i < n-1) {
+                int lml_i = LML[i];
+                int rml_i = RML[i];
 
-            // for(int j = 0; j < pre_Di.size();) {
-            //     int now_char = pre_Di[j];
-            //     int cnt = 1;
-            //     if(MAX <= now_char && now_char < MAX+n) {
-            //         D[i].push_back(now_char);
-            //         j++;
-            //         continue;
-            //     }
-            //     while(j+cnt < pre_Di.size() && now_char == pre_Di[j+cnt]) {
-            //         cnt++;
-            //     }
-            //     if(RL_par.count({cnt,now_char})) D[i].push_back(not_RL_par[{cnt,now_char}]);
-            //     else {
-            //         D[i].push_back(var_RLSLP);
-            //         RL_par[{cnt,now_char}] = var_RLSLP;
-            //         RLSLP_L.push_back(cnt);
-            //         RLSLP_R.push_back(now_char);
-            //         var_RLSLP++;
-            //     }
-            // }
+                if(D[i].size() == 0) continue;
+                while(D[i].back() == rml_i) D[i].pop_back();
+
+                if(D[i].size() == 0) continue;
+
+                reverse(D[i].begin(),D[i].end());
+                while(D[i].back() == lml_i) D[i].pop_back(); 
+                reverse(D[i].begin(),D[i].end());
+            }
+        }
+
+        for(int i = 0; i < n; i++) {
+            auto pre_Di = D[i];
+            D[i].clear();
+
+            for(int j = 0; j < pre_Di.size();) {
+                int now_char = pre_Di[j];
+                int cnt = 1;
+                if(MAX <= now_char && now_char < MAX+n) {
+                    D[i].push_back(now_char);
+                    j++;
+                    continue;
+                }
+                while(j+cnt < pre_Di.size() && now_char == pre_Di[j+cnt]) {
+                    cnt++;
+                }
+                if(cnt == 1) {
+                    D[i].push_back(now_char);
+                    j++;
+                    continue;
+                }
+                if(RL_par.count({cnt,now_char})) D[i].push_back(RL_par[{cnt,now_char}]);
+                else {
+                    D[i].push_back(var_RLSLP);
+                    RL_par[{cnt,now_char}] = var_RLSLP;
+                    RLSLP_L.push_back(cnt);
+                    RLSLP_R.push_back(now_char);
+                    var_RLSLP++;
+                }
+                j += cnt;
+            }
         }
     }
 
     void ReComp() {
-        int cnt = 0;
-        print_D();
-        while(cnt < 10) {
+        while(1) {
             cout << "Bcomp前" << endl;
             print_D();
             BComp();
@@ -312,7 +344,17 @@ struct SimTtoG {
             PComp();
             cout << "Pcomp後" << endl;
             print_D();
-            cnt++;
+
+            bool fin = true;
+            for(int i = 0; i < n-1; i++) if(D[i].size() != 0) fin = false;
+            if(fin && D[n-1].size() == 1) break;
+        }
+        cout << "---RLSLP---" << endl;
+        cout << RLSLP_L.size() << endl;
+        for(int i = 0; i < RLSLP_L.size(); i++) {
+            if(RLSLP_L[i] >= MAX+n) RLSLP_L[i] -= n;
+            if(RLSLP_R[i] >= MAX+n) RLSLP_R[i] -= n;
+            cout << MAX+i << " : " << RLSLP_L[i] << " " << RLSLP_R[i] << endl;
         }
     }
 };

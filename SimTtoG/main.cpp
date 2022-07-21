@@ -9,6 +9,6 @@ int main() {
     RePair RP(S);
     RP.Comp();
 
-    SimTtoG RL(RP.n-RP.Alphabet_Size,RP.L,RP.R);
+    SimTtoG RL(RP.n-RP.Alphabet_Size,RP.L,RP.R,256);
     RL.ReComp();
 }
