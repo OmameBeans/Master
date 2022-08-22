@@ -15,6 +15,7 @@ struct SimTtoG {
     vector<int> RLSLP_L, RLSLP_R;
     Production_rule D; //SLPの生成規則
     vector<int> len; //規則の長さ
+    vector<bool> rule_sz; //SLPの規則の右辺のサイズ
     vector<int> LML, RML;
     /*
         LML[i] : 規則iを根とする導出部分木の左端葉
@@ -35,6 +36,7 @@ struct SimTtoG {
         len.assign(n,0); 
         D.assign(n,vector<int>());
         MAX = _MAX;
+        rule_sz.assign(n,false);
         var_RLSLP = MAX+n;
         LML.assign(n,-1);
         RML.assign(n,-1);
@@ -354,7 +356,7 @@ struct SimTtoG {
         for(int i = 0; i < RLSLP_L.size(); i++) {
             if(RLSLP_L[i] >= MAX+n) RLSLP_L[i] -= n;
             if(RLSLP_R[i] >= MAX+n) RLSLP_R[i] -= n;
-            cout << MAX+i << " : " << RLSLP_L[i] << " " << RLSLP_R[i] << endl;
+            cout << MAX+i << " ---> " << RLSLP_L[i] << " " << RLSLP_R[i] << endl;
         }
     }
 };
