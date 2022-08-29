@@ -4,6 +4,7 @@
 #include<unordered_map>
 #include <random>
 #include "HashPair.hpp"
+#define DEBUG
 
 struct SimTtoG {
 
@@ -192,13 +193,13 @@ struct SimTtoG {
             if(i < n-1) {
                 if(D[i].size() > 0) {
                     if(LorR.count(D[i].front()) && LorR[D[i].front()] == 1) {
-                        cout << i+MAX << "から" << *D[i].begin() << "を消す" << endl; 
+                        //cout << i+MAX << "から" << *D[i].begin() << "を消す" << endl; 
                         D[i].erase(D[i].begin());
                     }
                 }
                 if(D[i].size() > 0) {
                     if(LorR.count(D[i].back()) && LorR[D[i].back()] == 0) {
-                    cout << i+MAX << "から" << D[i].back() << "を消す" << endl; 
+                        //cout << i+MAX << "から" << D[i].back() << "を消す" << endl; 
                         D[i].pop_back();
                     }
                 }
@@ -336,21 +337,31 @@ struct SimTtoG {
 
     void ReComp() {
         while(1) {
+            #ifdef DEBUG
             cout << "Bcomp前" << endl;
             print_D();
+            #endif // DEBUG
             BComp();
+            #ifdef DEBUG
             cout << "Bcomp後" << endl;
             print_D();
+            #endif // DEBUG
+            #ifdef DEBUG
             cout << "Pcomp前" << endl;
             print_D();
+            #endif // DEBUG
             PComp();
+            #ifdef DEBUG
             cout << "Pcomp後" << endl;
             print_D();
+            #endif // DEBUG
 
             bool fin = true;
             for(int i = 0; i < n-1; i++) if(D[i].size() != 0) fin = false;
             if(fin && D[n-1].size() == 1) break;
         }
+
+        #ifdef DEBUG
         cout << "---RLSLP---" << endl;
         cout << RLSLP_L.size() << endl;
         for(int i = 0; i < RLSLP_L.size(); i++) {
@@ -358,5 +369,6 @@ struct SimTtoG {
             if(RLSLP_R[i] >= MAX+n) RLSLP_R[i] -= n;
             cout << MAX+i << " ---> " << RLSLP_L[i] << " " << RLSLP_R[i] << endl;
         }
+        #endif // DEBUG
     }
 };
