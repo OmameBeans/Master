@@ -1,2 +1,2 @@
-g++ SimTtoG.cpp
+g++ SimTtoG.cpp \\
 ./a.out -c input.c -r input.r
