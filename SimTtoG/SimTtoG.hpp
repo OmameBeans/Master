@@ -4,7 +4,7 @@
 #include<unordered_map>
 #include <random>
 #include "HashPair.hpp"
-#define DEBUG
+//#define DEBUG
 
 struct SimTtoG {
 
@@ -214,6 +214,7 @@ struct SimTtoG {
         cal_LML_RML(pre_D);
 
         D = vector<vector<int>>(n);
+        auto pre_Di = vector<int>();
 
         assign_LorR(LorR, pre_D);
         PopInLet(D,pre_D,LorR);
@@ -221,7 +222,7 @@ struct SimTtoG {
 
         //各生成規則の右辺を変換していく
         for(int i = 0; i < n; i++) {
-            auto pre_Di = D[i];
+            pre_Di = D[i];
             D[i].clear();
 
             for(int j = 0; j < pre_Di.size();) {
@@ -261,12 +262,13 @@ struct SimTtoG {
         cal_len(D);
         cal_LML_RML(D);
         cal_block_length(D);
+        auto pre_Di = vector<int>();
 
         for(int i = 0; i < n; i++) {
-            auto pre = D[i];
+            pre_Di = D[i];
             D[i].clear();
-            for(int j = 0; j < pre.size(); j++) {
-                int x = pre[j];
+            for(int j = 0; j < pre_Di.size(); j++) {
+                int x = pre_Di[j];
                 if(x < MAX || MAX+n <= x) {
                     D[i].emplace_back(x);
                 } else {
@@ -303,7 +305,7 @@ struct SimTtoG {
         }
 
         for(int i = 0; i < n; i++) {
-            auto pre_Di = D[i];
+            pre_Di = D[i];
             D[i].clear();
 
             for(int j = 0; j < pre_Di.size();) {

@@ -6,6 +6,7 @@
 #include <deque>
 #include "cmdline.h"
 #include "SimTtoG.hpp"
+//#define DEBUG
 
 using namespace std;
 
@@ -29,52 +30,82 @@ int main(int argc, char *argv[]) {
     instream_c.clear();
     instream_c.seekg(0,std::ios::beg);
 
+    #ifdef DEBUG
     cout << ".C bytesize is " << bytesize_c << endl;
     cout << ".R bytesize is " << bytesize_r << endl;
 
-    vector<int> SLP_L, SLP_R;
-    int SLP_n = 256;
-
     cout << "---.R---" << endl;
+    #endif //DEBUG
 
-    for(uint64_t i = 0; i < bytesize_r; i += 8) {
+    vector<int> SLP_L, SLP_R;
+    int Arph_size = 0;
+
+    for(int i = 0; i < 4; i++) {
+        char n;
+        instream_r.read((char * ) &n, sizeof(n));
+        Arph_size += (int)(n);
+    }
+
+    int SLP_n = Arph_size;
+
+    vector<char> Arph;
+
+    for(int i = 0; i < Arph_size; i++) {
+        char c;
+        instream_r.read((char *)&c, sizeof(c));
+        Arph.push_back(c);
+    }
+
+    for(uint64_t i = 4 + Arph_size; i < bytesize_r; i += 8) {
         int tot = 0;
-        for(int j = 3; j >= 0; --j) {
+        for(int j = 0; j < 4; ++j) {
             char n;
             instream_r.read((char *)&n, sizeof(n));
             tot += (int)n * (1<<(4*j));
         }
+        #ifdef DEBUG
         cout << tot << " ";
+        #endif //DEBUG
         SLP_L.push_back(tot);
 
         tot = 0;
-        for(int j = 3; j >= 0; --j) {
+        for(int j = 0; j < 4; j++) {
             char n;
             instream_r.read((char *)&n, sizeof(n));
             tot += (int)n * (1<<(4*j));
         }
         SLP_R.push_back(tot);
+        #ifdef DEBUG
         cout << tot << endl;
+        #endif //DEBUG
 
         SLP_n++;
     }
 
+    #ifdef DEBUG
+
     cout << "---.C---" << endl;
+
+    #endif //DEBUG
 
     deque<int> Clist;
 
     for(uint64_t i = 0; i < bytesize_c; i += 4) {
         int tot = 0;
-        for(int j = 3; j >= 0; --j) {
+        for(int j = 0; j < 4; j++) {
             char n;
             instream_c.read((char *)&n, sizeof(n));
             tot += (int)n * (1<<(4*j));
         }
-        cout << tot << endl;
+        #ifdef DEBUG
+        cout << tot << " ";
+        #endif //DEBUG
         Clist.push_back(tot);
     }
 
-    cout << endl;
+    #ifdef DEBUG
+    cout << endl << endl;
+    #endif //DEBUG
 
     while(Clist.size() > 1) {
         auto a = Clist.front();
@@ -89,7 +120,17 @@ int main(int argc, char *argv[]) {
         SLP_n++;
     }
 
+    for(int i = 0; i < SLP_L.size(); i++) {
+        if(SLP_L[i] < Arph_size) SLP_L[i] = (int)(Arph[SLP_L[i]]);
+        else SLP_L[i] = SLP_L[i] - Arph_size + 256;
+
+        if(SLP_R[i] < Arph_size) SLP_R[i] = (int)(Arph[SLP_R[i]]);
+        else SLP_R[i] = SLP_R[i] - Arph_size + 256;
+    }
+
+    #ifdef DEBUG
     for(int i = 0; i < SLP_L.size(); i++) cout << SLP_L[i] << " " << SLP_R[i] << endl;
+    #endif //DEBUG
 
     SimTtoG G(SLP_L.size(), SLP_L, SLP_R, 256);
     G.ReComp();
