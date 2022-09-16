@@ -7,6 +7,7 @@
 #include "cmdline.h"
 #include "SimTtoG.hpp"
 //#define DEBUG
+const int MAX = 256;
 
 using namespace std;
 
@@ -122,16 +123,16 @@ int main(int argc, char *argv[]) {
 
     for(int i = 0; i < SLP_L.size(); i++) {
         if(SLP_L[i] < Arph_size) SLP_L[i] = (int)(Arph[SLP_L[i]]);
-        else SLP_L[i] = SLP_L[i] - Arph_size + 256;
+        else SLP_L[i] = SLP_L[i] - Arph_size + MAX;
 
         if(SLP_R[i] < Arph_size) SLP_R[i] = (int)(Arph[SLP_R[i]]);
-        else SLP_R[i] = SLP_R[i] - Arph_size + 256;
+        else SLP_R[i] = SLP_R[i] - Arph_size + MAX;
     }
 
     #ifdef DEBUG
     for(int i = 0; i < SLP_L.size(); i++) cout << SLP_L[i] << " " << SLP_R[i] << endl;
     #endif //DEBUG
 
-    SimTtoG G(SLP_L.size(), SLP_L, SLP_R, 256);
+    SimTtoG G(SLP_L.size(), SLP_L, SLP_R, MAX);
     G.ReComp();
 }
