@@ -6,7 +6,7 @@
 #include <deque>
 #include "cmdline.h"
 #include "SimTtoG.hpp"
-//#define DEBUG
+#define DEBUG
 const int MAX = 256;
 
 using namespace std;
@@ -39,30 +39,32 @@ int main(int argc, char *argv[]) {
     #endif //DEBUG
 
     vector<int> SLP_L, SLP_R;
-    int Arph_size = 0;
+    int alph_size = 0;
 
     for(int i = 0; i < 4; i++) {
         char n;
-        instream_r.read((char * ) &n, sizeof(n));
-        Arph_size += (int)(n);
+        instream_r.read((char * ) &n, sizeof(char));
+        alph_size += (unsigned char)(n) * (1<<(4*i));
     }
 
-    int SLP_n = Arph_size;
+    cout << alph_size << endl;
 
-    vector<char> Arph;
+    int SLP_n = alph_size;
 
-    for(int i = 0; i < Arph_size; i++) {
+    vector<char> alph;
+
+    for(int i = 0; i < alph_size; i++) {
         char c;
         instream_r.read((char *)&c, sizeof(c));
-        Arph.push_back(c);
+        alph.push_back(c);
     }
 
-    for(uint64_t i = 4 + Arph_size; i < bytesize_r; i += 8) {
+    for(uint64_t i = 4 + alph_size; i < bytesize_r; i += 8) {
         int tot = 0;
         for(int j = 0; j < 4; ++j) {
             char n;
             instream_r.read((char *)&n, sizeof(n));
-            tot += (int)n * (1<<(4*j));
+            tot += (unsigned char)n * (1<<(4*j));
         }
         #ifdef DEBUG
         cout << tot << " ";
@@ -73,7 +75,7 @@ int main(int argc, char *argv[]) {
         for(int j = 0; j < 4; j++) {
             char n;
             instream_r.read((char *)&n, sizeof(n));
-            tot += (int)n * (1<<(4*j));
+            tot += (unsigned char)n * (1<<(4*j));
         }
         SLP_R.push_back(tot);
         #ifdef DEBUG
@@ -96,7 +98,7 @@ int main(int argc, char *argv[]) {
         for(int j = 0; j < 4; j++) {
             char n;
             instream_c.read((char *)&n, sizeof(n));
-            tot += (int)n * (1<<(4*j));
+            tot += (unsigned char)n * (1<<(4*j));
         }
         #ifdef DEBUG
         cout << tot << " ";
@@ -122,11 +124,11 @@ int main(int argc, char *argv[]) {
     }
 
     for(int i = 0; i < SLP_L.size(); i++) {
-        if(SLP_L[i] < Arph_size) SLP_L[i] = (int)(Arph[SLP_L[i]]);
-        else SLP_L[i] = SLP_L[i] - Arph_size + MAX;
+        if(SLP_L[i] < alph_size) SLP_L[i] = (int)(alph[SLP_L[i]]);
+        else SLP_L[i] = SLP_L[i] - alph_size + MAX;
 
-        if(SLP_R[i] < Arph_size) SLP_R[i] = (int)(Arph[SLP_R[i]]);
-        else SLP_R[i] = SLP_R[i] - Arph_size + MAX;
+        if(SLP_R[i] < alph_size) SLP_R[i] = (int)(alph[SLP_R[i]]);
+        else SLP_R[i] = SLP_R[i] - alph_size + MAX;
     }
 
     #ifdef DEBUG
